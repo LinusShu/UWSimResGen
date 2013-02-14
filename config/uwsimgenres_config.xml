@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+	
+	<symbols>
+		<!-- symbol Info
+			The reel symbols of the slot machine
+			Acceptable Values(AV) for id: [integer value] - DO NOT CHANGE
+			AV for type: [basic|scatter|bonus]
+			AV for alias: [single character of alphabet, A to Z]
+		-->
+		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET -->
+		<symbol id="0" 	type="basic" 	alias="A" />
+		<symbol id="1" 	type="basic" 	alias="B" />
+		<symbol id="2" 	type="basic" 	alias="C" />
+		<symbol id="3" 	type="basic" 	alias="D" />
+		<symbol id="4" 	type="basic" 	alias="E" />
+		<symbol id="5" 	type="basic" 	alias="F" />
+		<symbol id="6" 	type="basic" 	alias="G" />
+		<symbol id="7" 	type="basic" 	alias="H" />
+		<symbol id="8" 	type="basic" 	alias="I" />
+		<symbol id="9" 	type="basic" 	alias="J" />
+		<symbol id="10" type="scatter" 	alias="S" />
+		<symbol id="11" type="bonus" 	alias="Z" />
+	</symbols>
+	<payLines>
+		<!-- payLine Info
+			The lines of the slot machine
+			AV for number: [integer between 0 - 19] - DO NOT MODIFY
+			AV for r1 to r5: [top|mid|bot] - the winning position on the reel (top, middle, bottom)
+		-->		
+		<payLine number="0"  r1="mid" r2="mid" r3="mid" r4="mid" r5="mid"  />
+		<payLine number="1"  r1="top" r2="top" r3="top" r4="top" r5="top"  />
+		<payLine number="2"  r1="bot" r2="bot" r3="bot" r4="bot" r5="bot"  />
+		<payLine number="3"  r1="top" r2="mid" r3="bot" r4="mid" r5="top"  />
+		<payLine number="4"  r1="bot" r2="mid" r3="top" r4="mid" r5="bot"  />
+		<payLine number="5"  r1="top" r2="top" r3="mid" r4="bot" r5="bot"  />
+		<payLine number="6"  r1="bot" r2="bot" r3="mid" r4="top" r5="top"  />
+		<payLine number="7"  r1="mid" r2="top" r3="mid" r4="bot" r5="mid"  />
+		<payLine number="8"  r1="mid" r2="bot" r3="mid" r4="top" r5="mid"  />
+		<payLine number="9"  r1="top" r2="mid" r3="mid" r4="mid" r5="bot"  />
+		<payLine number="10" r1="bot" r2="mid" r3="mid" r4="mid" r5="top"  />
+		<payLine number="11" r1="mid" r2="top" r3="top" r4="mid" r5="bot"  />
+		<payLine number="12" r1="mid" r2="bot" r3="bot" r4="mid" r5="top"  />
+		<payLine number="13" r1="mid" r2="mid" r3="top" r4="mid" r5="bot"  />
+		<payLine number="14" r1="mid" r2="mid" r3="bot" r4="mid" r5="top"  />
+		<payLine number="15" r1="top" r2="top" r3="mid" r4="bot" r5="mid"  />
+		<payLine number="16" r1="bot" r2="bot" r3="mid" r4="top" r5="mid"  />
+		<payLine number="17" r1="mid" r2="top" r3="mid" r4="bot" r5="bot"  />
+		<payLine number="18" r1="mid" r2="bot" r3="mid" r4="top" r5="top"  />
+		<payLine number="19" r1="top" r2="top" r3="top" r4="mid" r5="bot"  />
+	</payLines>
+	<basePayTable>
+		<!-- basePayTableEntry Info
+			The paytable of the slot machine
+			AV for id: [integer] - DO NOT MODIFY
+			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
+			AV for basePayout: [integer value greater than 0]
+		-->
+		<basePayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
+		<basePayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
+		<basePayTableEntry winCode="0001" sequence="AAAAA" basePayout="100" type="basic"  />
+		
+		<basePayTableEntry winCode="0002" sequence="BBB##" basePayout="10" type="basic"  />
+		<basePayTableEntry winCode="0002" sequence="BBBB#" basePayout="25" type="basic"  />
+		<basePayTableEntry winCode="0002" sequence="BBBBB" basePayout="100" type="basic"  />
+		
+		<basePayTableEntry winCode="0003" sequence="CCC##" basePayout="10" type="basic"  />
+		<basePayTableEntry winCode="0003" sequence="CCCC#" basePayout="25" type="basic"  />
+		<basePayTableEntry winCode="0003" sequence="CCCCC" basePayout="150" type="basic"  />
+		
+		<basePayTableEntry winCode="0004" sequence="DDD##" basePayout="15" type="basic"  />
+		<basePayTableEntry winCode="0004" sequence="DDDD#" basePayout="50" type="basic"  />
+		<basePayTableEntry winCode="0004" sequence="DDDDD" basePayout="150" type="basic"  />
+		
+		<basePayTableEntry winCode="0005" sequence="EE###" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0005" sequence="EEE##" basePayout="25" type="basic"  />
+		<basePayTableEntry winCode="0005" sequence="EEEE#" basePayout="100" type="basic"  />
+		<basePayTableEntry winCode="0005" sequence="EEEEE" basePayout="250" type="basic"  />
+		
+		<basePayTableEntry winCode="0006" sequence="FF###" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0006" sequence="FFF##" basePayout="25" type="basic"  />
+		<basePayTableEntry winCode="0006" sequence="FFFF#" basePayout="150" type="basic"  />
+		<basePayTableEntry winCode="0006" sequence="FFFFF" basePayout="500" type="basic"  />
+		
+		<basePayTableEntry winCode="0007" sequence="GG###" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0007" sequence="GGG##" basePayout="50" type="basic"  />
+		<basePayTableEntry winCode="0007" sequence="GGGG#" basePayout="150" type="basic"  />
+		<basePayTableEntry winCode="0007" sequence="GGGGG" basePayout="500" type="basic"  />
+		
+		<basePayTableEntry winCode="0008" sequence="HH###" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0008" sequence="HHH##" basePayout="50" type="basic"  />
+		<basePayTableEntry winCode="0008" sequence="HHHH#" basePayout="200" type="basic"  />
+		<basePayTableEntry winCode="0008" sequence="HHHHH" basePayout="750" type="basic"  />
+		
+		<basePayTableEntry winCode="0009" sequence="II###" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0009" sequence="III##" basePayout="50" type="basic"  />
+		<basePayTableEntry winCode="0009" sequence="IIII#" basePayout="250" type="basic"  />
+		<basePayTableEntry winCode="0009" sequence="IIIII" basePayout="750" type="basic"  />
+		
+		<basePayTableEntry winCode="0010" sequence="J####" basePayout="2" type="basic"  />
+		<basePayTableEntry winCode="0010" sequence="JJ###" basePayout="10" type="basic"  />
+		<basePayTableEntry winCode="0010" sequence="JJJ##" basePayout="100" type="basic"  />
+		<basePayTableEntry winCode="0010" sequence="JJJJ#" basePayout="1000" type="basic"  />
+		<basePayTableEntry winCode="0010" sequence="JJJJJ" basePayout="10000" type="basic"  />
+		
+		<basePayTableEntry winCode="0011" sequence="SS###" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S#S##" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S##S#" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S###S" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#SS##" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#S#S#" basePayout="2" type="scatter" />
+		<basePayTableEntry winCode="0011" sequence="#S##S" basePayout="2" type="scatter" />
+		<basePayTableEntry winCode="0011" sequence="##SS#" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="##S#S" basePayout="2" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="###SS" basePayout="2" type="scatter"  />
+		
+		<basePayTableEntry winCode="0011" sequence="SSS##" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="##SSS" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="SS#S#" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#S#SS" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="SS##S" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S##SS" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S#SS#" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#SS#S" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S#S#S" basePayout="5" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#SSS#" basePayout="5" type="scatter"  />
+		
+		<basePayTableEntry winCode="0011" sequence="SSSS#" basePayout="20" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="SSS#S" basePayout="20" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="SS#SS" basePayout="20" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="S#SSS" basePayout="20" type="scatter"  />
+		<basePayTableEntry winCode="0011" sequence="#SSSS" basePayout="20" type="scatter"  />
+		
+		<basePayTableEntry winCode="0011" sequence="SSSSS" basePayout="100" type="scatter"  />
+		
+		<basePayTableEntry winCode="0012" sequence="ZZZ##" basePayout="0"  type="bonus" />
+		<basePayTableEntry winCode="0012" sequence="ZZZZ#" basePayout="0" type="bonus" />
+		<basePayTableEntry winCode="0012" sequence="ZZZZZ" basePayout="0"  type="bonus" />
+	</basePayTable>
+	<bonusPayTable>
+		<!-- bonusPayTableEntry Info
+			The paytable of the slot machine
+			AV for id: [integer] - DO NOT MODIFY
+			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
+			AV for basePayout: [integer value greater than 0]
+		-->
+		<bonusPayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
+		<bonusPayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
+		<bonusPayTableEntry winCode="0001" sequence="AAAAA" basePayout="100" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0002" sequence="BBB##" basePayout="10" type="basic"  />
+		<bonusPayTableEntry winCode="0002" sequence="BBBB#" basePayout="25" type="basic"  />
+		<bonusPayTableEntry winCode="0002" sequence="BBBBB" basePayout="100" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0003" sequence="CCC##" basePayout="10" type="basic"  />
+		<bonusPayTableEntry winCode="0003" sequence="CCCC#" basePayout="25" type="basic"  />
+		<bonusPayTableEntry winCode="0003" sequence="CCCCC" basePayout="150" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0004" sequence="DDD##" basePayout="15" type="basic"  />
+		<bonusPayTableEntry winCode="0004" sequence="DDDD#" basePayout="50" type="basic"  />
+		<bonusPayTableEntry winCode="0004" sequence="DDDDD" basePayout="150" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0005" sequence="EE###" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0005" sequence="EEE##" basePayout="25" type="basic"  />
+		<bonusPayTableEntry winCode="0005" sequence="EEEE#" basePayout="100" type="basic"  />
+		<bonusPayTableEntry winCode="0005" sequence="EEEEE" basePayout="250" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0006" sequence="FF###" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0006" sequence="FFF##" basePayout="25" type="basic"  />
+		<bonusPayTableEntry winCode="0006" sequence="FFFF#" basePayout="150" type="basic"  />
+		<bonusPayTableEntry winCode="0006" sequence="FFFFF" basePayout="500" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0007" sequence="GG###" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0007" sequence="GGG##" basePayout="50"  type="basic" />
+		<bonusPayTableEntry winCode="0007" sequence="GGGG#" basePayout="150" type="basic"  />
+		<bonusPayTableEntry winCode="0007" sequence="GGGGG" basePayout="500" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0008" sequence="HH###" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0008" sequence="HHH##" basePayout="50" type="basic"  />
+		<bonusPayTableEntry winCode="0008" sequence="HHHH#" basePayout="200" type="basic"  />
+		<bonusPayTableEntry winCode="0008" sequence="HHHHH" basePayout="750"  type="basic" />
+		
+		<bonusPayTableEntry winCode="0009" sequence="II###" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0009" sequence="III##" basePayout="50"  type="basic" />
+		<bonusPayTableEntry winCode="0009" sequence="IIII#" basePayout="250" type="basic"  />
+		<bonusPayTableEntry winCode="0009" sequence="IIIII" basePayout="750" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0010" sequence="J####" basePayout="2" type="basic"  />
+		<bonusPayTableEntry winCode="0010" sequence="JJ###" basePayout="10"  type="basic" />
+		<bonusPayTableEntry winCode="0010" sequence="JJJ##" basePayout="100" type="basic"  />
+		<bonusPayTableEntry winCode="0010" sequence="JJJJ#" basePayout="1000" type="basic"  />
+		<bonusPayTableEntry winCode="0010" sequence="JJJJJ" basePayout="10000" type="basic"  />
+		
+		<bonusPayTableEntry winCode="0011" sequence="SS###" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S#S##" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S##S#" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S###S" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#SS##" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#S#S#" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#S##S" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="##SS#" basePayout="2" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="##S#S" basePayout="2"  type="scatter" />
+		<bonusPayTableEntry winCode="0011" sequence="###SS" basePayout="2" type="scatter"  />
+		
+		<bonusPayTableEntry winCode="0011" sequence="SSS##" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="##SSS" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="SS#S#" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#S#SS" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="SS##S" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S##SS" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S#SS#" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#SS#S" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S#S#S" basePayout="5" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#SSS#" basePayout="5" type="scatter"  />
+		
+		<bonusPayTableEntry winCode="0011" sequence="SSSS#" basePayout="20" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="SSS#S" basePayout="20" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="SS#SS" basePayout="20" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="S#SSS" basePayout="20" type="scatter"  />
+		<bonusPayTableEntry winCode="0011" sequence="#SSSS" basePayout="20" type="scatter"  />
+		
+		<bonusPayTableEntry winCode="0011" sequence="SSSSS" basePayout="100" type="scatter" />
+		
+		<bonusPayTableEntry winCode="0012" sequence="ZZZ##" basePayout="0" type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="##ZZZ" basePayout="0"  type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="ZZ#Z#" basePayout="0" type="bonus" />
+		<bonusPayTableEntry winCode="0012" sequence="#Z#ZZ" basePayout="0" type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="ZZ##Z" basePayout="0" type="bonus"   />
+		<bonusPayTableEntry winCode="0012" sequence="Z##ZZ" basePayout="0" type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="Z#ZZ#" basePayout="0" type="bonus" />
+		<bonusPayTableEntry winCode="0012" sequence="#ZZ#Z" basePayout="0" type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="Z#Z#Z" basePayout="0"  type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="#ZZZ#" basePayout="0"  type="bonus"  />
+		
+		<bonusPayTableEntry winCode="0012" sequence="ZZZZ#" basePayout="0"  type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="ZZZ#Z" basePayout="0"  type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="ZZ#ZZ" basePayout="0"  type="bonus"   />
+		<bonusPayTableEntry winCode="0012" sequence="Z#ZZZ" basePayout="0" type="bonus"  />
+		<bonusPayTableEntry winCode="0012" sequence="#ZZZZ" basePayout="0" type="bonus"  />
+		
+		<bonusPayTableEntry winCode="0012" sequence="ZZZZZ" basePayout="0" type="bonus"  />
+	</bonusPayTable>
+	<bonusSpinOdds>
+		<!-- bonusSpinOdd Info
+			The probability table for awarding bonus spins. The probability of an entry hitting is P(e)=(slice / ( sum of slices ))
+			AV for spinsAwarded: [integer greater than 0] - amount of spins given to player if this entry hit
+			AV for slice: [integer greater than 0] - slice of probability pie. 
+		-->
+		<bonusSpinOdd spinsAwarded="5" slice="50" />
+		<bonusSpinOdd spinsAwarded="6" slice="10" />
+		<bonusSpinOdd spinsAwarded="7" slice="10" />
+		<bonusSpinOdd spinsAwarded="8" slice="10" />
+		<bonusSpinOdd spinsAwarded="9" slice="10" />
+		<bonusSpinOdd spinsAwarded="15" slice="5" />
+		<bonusSpinOdd spinsAwarded="20" slice="5" />
+	</bonusSpinOdds>
+	<reelMappings>
+		<!-- reelStop Info
+			The reel stops of the slot machine
+			AV for id: [integer value greater than or equal to 0] DO NOT MODIFY
+			AV for r1 to r5: [single character matching a symbol alias]
+		-->
+		<reelStop id="0" r1="J" r2="J" r3="A" r4="G" r5="J" />
+		<reelStop id="1" r1="C" r2="E" r3="D" r4="I" r5="D" />
+		<reelStop id="2" r1="H" r2="D" r3="F" r4="A" r5="G" />
+		<reelStop id="3" r1="D" r2="H" r3="S" r4="B" r5="B" />
+		<reelStop id="4" r1="G" r2="A" r3="G" r4="F" r5="Z" />
+		<reelStop id="5" r1="Z" r2="F" r3="C" r4="C" r5="F" />
+		<reelStop id="6" r1="F" r2="C" r3="J" r4="Z" r5="C" />
+		<reelStop id="7" r1="B" r2="I" r3="I" r4="D" r5="G" />
+		<reelStop id="8" r1="E" r2="D" r3="C" r4="E" r5="Z" />
+		<reelStop id="9" r1="S" r2="G" r3="B" r4="A" r5="I" />
+		<reelStop id="10" r1="I" r2="J" r3="G" r4="G" r5="D" />
+		<reelStop id="11" r1="D" r2="E" r3="F" r4="J" r5="E" />
+		<reelStop id="12" r1="H" r2="C" r3="Z" r4="I" r5="B" />
+		<reelStop id="13" r1="Z" r2="H" r3="H" r4="C" r5="H" />
+		<reelStop id="14" r1="G" r2="Z" r3="C" r4="F" r5="A" />
+		<reelStop id="15" r1="D" r2="F" r3="J" r4="Z" r5="E" />
+		<reelStop id="16" r1="F" r2="A" r3="E" r4="H" r5="B" />
+		<reelStop id="17" r1="J" r2="I" r3="B" r4="D" r5="F" />
+		<reelStop id="18" r1="E" r2="J" r3="D" r4="J" r5="A" />
+		<reelStop id="19" r1="B" r2="G" r3="H" r4="G" r5="G" />
+		<reelStop id="20" r1="I" r2="C" r3="E" r4="C" r5="B" />
+		<reelStop id="21" r1="Z" r2="E" r3="J" r4="A" r5="I" />
+		<reelStop id="22" r1="C" r2="Z" r3="F" r4="I" r5="D" />
+		<reelStop id="23" r1="G" r2="H" r3="A" r4="C" r5="H" />
+		<reelStop id="24" r1="B" r2="B" r3="G" r4="F" r5="S" />
+		<reelStop id="25" r1="Z" r2="F" r3="Z" r4="J" r5="I" />
+		<reelStop id="26" r1="F" r2="C" r3="H" r4="H" r5="A" />
+		<reelStop id="27" r1="B" r2="I" r3="B" r4="D" r5="H" />
+		<reelStop id="28" r1="E" r2="D" r3="I" r4="E" r5="G" />
+		<reelStop id="29" r1="C" r2="Z" r3="C" r4="S" r5="F" />
+		<reelStop id="30" r1="H" r2="B" r3="E" r4="B" r5="C" />
+		<reelStop id="31" r1="A" r2="F" r3="A" r4="E" r5="J" />
+		<reelStop id="32" r1="Z" r2="S" r3="I" r4="A" r5="E" />
+		<reelStop id="33" r1="I" r2="B" r3="D" r4="H" r5="C" />
+		<reelStop id="34" r1="A" r2="G" r3="G" r4="B" r5="A" />
+	</reelMappings>
+</data>

@@ -1,0 +1,16 @@
+UWSimResGen: Log File
+LAUNCH NEW SESSION:
+Set Table Name: SpinResults_11_07_2012_01_28_18_0206
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 10
+END PRODUCTION
+LAUNCH NEW SESSION:
+Set Table Name: SpinResults_11_07_2012_01_28_32_0558
+Finished reading configuration file. Errors: 0, Warnings: 0
+Mode: Do All Reel Stop Combinations.
+START PRODUCTION
+Total Spins: 52521875
+END PRODUCTION

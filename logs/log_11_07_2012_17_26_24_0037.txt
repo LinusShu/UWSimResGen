@@ -1,0 +1,71 @@
+UWSimResGen: Log File
+LAUNCH NEW SESSION:
+Set Results DB Table Name: SimResults_SpinResults_11_07_2012_17_26_32_0895
+Set Symbols DB Table Name: SimResults_Symbols_11_07_2012_17_26_32_0895
+Set Paylines DB Table Name: SimResults_Paylines_11_07_2012_17_26_32_0895
+Set Base Paytable DB Table Name: SimResults_BasePaytable_11_07_2012_17_26_32_0895
+Set Bonus Paytable DB Table Name: SimResults_BonusPaytable_11_07_2012_17_26_32_0895
+Set Bonus Spin Odds DB Table Name: SimResults_BonusSpinOdds_11_07_2012_17_26_32_0895
+Set Reel Mappings DB Table Name: SimResults_ReelMappings_11_07_2012_17_26_32_0895
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 10
+END PRODUCTION
+LAUNCH NEW SESSION:
+Set Results DB Table Name: SimResults_SpinResults_11_07_2012_17_27_02_0600
+Set Symbols DB Table Name: SimResults_Symbols_11_07_2012_17_27_02_0600
+Set Paylines DB Table Name: SimResults_Paylines_11_07_2012_17_27_02_0600
+Set Base Paytable DB Table Name: SimResults_BasePaytable_11_07_2012_17_27_02_0600
+Set Bonus Paytable DB Table Name: SimResults_BonusPaytable_11_07_2012_17_27_02_0600
+Set Bonus Spin Odds DB Table Name: SimResults_BonusSpinOdds_11_07_2012_17_27_02_0600
+Set Reel Mappings DB Table Name: SimResults_ReelMappings_11_07_2012_17_27_02_0600
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 1000
+END PRODUCTION
+LAUNCH NEW SESSION:
+Set Results DB Table Name: SimResults_SpinResults_11_07_2012_17_27_05_0275
+Set Symbols DB Table Name: SimResults_Symbols_11_07_2012_17_27_05_0275
+Set Paylines DB Table Name: SimResults_Paylines_11_07_2012_17_27_05_0275
+Set Base Paytable DB Table Name: SimResults_BasePaytable_11_07_2012_17_27_05_0275
+Set Bonus Paytable DB Table Name: SimResults_BonusPaytable_11_07_2012_17_27_05_0275
+Set Bonus Spin Odds DB Table Name: SimResults_BonusSpinOdds_11_07_2012_17_27_05_0275
+Set Reel Mappings DB Table Name: SimResults_ReelMappings_11_07_2012_17_27_05_0275
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 1000
+END PRODUCTION
+LAUNCH NEW SESSION:
+Set Results DB Table Name: SimResults2_SpinResults_11_07_2012_17_27_25_0435
+Set Symbols DB Table Name: SimResults2_Symbols_11_07_2012_17_27_25_0435
+Set Paylines DB Table Name: SimResults2_Paylines_11_07_2012_17_27_25_0435
+Set Base Paytable DB Table Name: SimResults2_BasePaytable_11_07_2012_17_27_25_0435
+Set Bonus Paytable DB Table Name: SimResults2_BonusPaytable_11_07_2012_17_27_25_0435
+Set Bonus Spin Odds DB Table Name: SimResults2_BonusSpinOdds_11_07_2012_17_27_25_0435
+Set Reel Mappings DB Table Name: SimResults2_ReelMappings_11_07_2012_17_27_25_0435
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 1000
+END PRODUCTION
+LAUNCH NEW SESSION:
+Set Results DB Table Name: SimResults_SpinResults_11_07_2012_17_28_38_0675
+Set Symbols DB Table Name: SimResults_Symbols_11_07_2012_17_28_38_0675
+Set Paylines DB Table Name: SimResults_Paylines_11_07_2012_17_28_38_0675
+Set Base Paytable DB Table Name: SimResults_BasePaytable_11_07_2012_17_28_38_0675
+Set Bonus Paytable DB Table Name: SimResults_BonusPaytable_11_07_2012_17_28_38_0675
+Set Bonus Spin Odds DB Table Name: SimResults_BonusSpinOdds_11_07_2012_17_28_38_0675
+Set Reel Mappings DB Table Name: SimResults_ReelMappings_11_07_2012_17_28_38_0675
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 1000
+END PRODUCTION

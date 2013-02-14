@@ -1,0 +1,16 @@
+----------------------------------------------------------------
+Tue Feb 12 17:51:31 EST 2013:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.8.1.2 - (1095077): instance a816c00e-013c-d09b-1bec-000000ad3080 
+on database directory C:\Users\Tim\Desktop\UWSimResGen\UWResGenDB  with class loader sun.misc.Launcher$AppClassLoader@197d257 
+Loaded from file:/C:/Program%20Files%20(x86)/Java/jdk1.7.0_02/db/lib/derby.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.7.0_13-b20
+user.dir=C:\Users\Tim\Desktop\UWSimResGen
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
+----------------------------------------------------------------
+Tue Feb 12 17:51:32 EST 2013: Shutting down Derby engine
+----------------------------------------------------------------
+Tue Feb 12 17:51:33 EST 2013:
+Shutting down instance a816c00e-013c-d09b-1bec-000000ad3080 on database directory C:\Users\Tim\Desktop\UWSimResGen\UWResGenDB with class loader sun.misc.Launcher$AppClassLoader@197d257 
+----------------------------------------------------------------
