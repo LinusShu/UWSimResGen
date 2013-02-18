@@ -9,6 +9,9 @@
 			AV for alias: [single character of alphabet, A to Z]
 		-->
 		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET -->
+		<!-- TODO: add B2 type="wbbonus"  
+					B2 in base mode: B2B2B2## in any horizontal line even not wagered on 
+					B2 in bounus mode: -->
 		<symbol id="0" 	type="basic" 	alias="A" />
 		<symbol id="1" 	type="basic" 	alias="B" />
 		<symbol id="2" 	type="basic" 	alias="C" />
@@ -143,7 +146,24 @@
 			AV for id: [integer] - DO NOT MODIFY
 			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
 			AV for basePayout: [integer value greater than 0]
+			
+			
+			A->F4
+			B->F3
+			C->F2
+			D->F1
+			E->M5
+			F->M4
+			G->M3
+			H->M2
+			I->M1
+			J->LO
+			S->B1
+			add B2: weather beacon bonus
+			Z->B3
+			
 		-->
+		<!-- change type to 'scatter' -->
 		<bonusPayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
 		<bonusPayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
 		<bonusPayTableEntry winCode="0001" sequence="AAAAA" basePayout="100" type="basic"  />
@@ -260,6 +280,8 @@
 			AV for id: [integer value greater than or equal to 0] DO NOT MODIFY
 			AV for r1 to r5: [single character matching a symbol alias]
 		-->
+		<!-- TODO:
+			change the symbols to match 90% version symbol table -->
 		<reelStop id="0" r1="J" r2="J" r3="A" r4="G" r5="J" />
 		<reelStop id="1" r1="C" r2="E" r3="D" r4="I" r5="D" />
 		<reelStop id="2" r1="H" r2="D" r3="F" r4="A" r5="G" />
