@@ -5,13 +5,27 @@
 		<!-- symbol Info
 			The reel symbols of the slot machine
 			Acceptable Values(AV) for id: [integer value] - DO NOT CHANGE
-			AV for type: [basic|scatter|bonus]
+			AV for type: [basic|scatter|bonus|wbbonus]
 			AV for alias: [single character of alphabet, A to Z]
 		-->
 		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET -->
-		<!-- TODO: add B2 type="wbbonus"  
+		<!-- TODO: - add B2 type="wbbonus"  
 					B2 in base mode: B2B2B2## in any horizontal line even not wagered on 
-					B2 in bounus mode: -->
+				   - map to symbol on the PAR sheet:
+			A->F4
+			B->F3
+			C->F2
+			D->F1
+			E->M5
+			F->M4
+			G->M3
+			H->M2
+			I->M1
+			J->LO
+			S->B1
+			add B2: weather beacon bonus
+			Z->B3	 
+		-->
 		<symbol id="0" 	type="basic" 	alias="A" />
 		<symbol id="1" 	type="basic" 	alias="B" />
 		<symbol id="2" 	type="basic" 	alias="C" />
@@ -23,7 +37,8 @@
 		<symbol id="8" 	type="basic" 	alias="I" />
 		<symbol id="9" 	type="basic" 	alias="J" />
 		<symbol id="10" type="scatter" 	alias="S" />
-		<symbol id="11" type="bonus" 	alias="Z" />
+		<symbol id="11" type="wbbonus" 	alias="B2" />
+		<symbol id="12" type="bonus"    alias="Z" />
 	</symbols>
 	<payLines>
 		<!-- payLine Info
@@ -145,25 +160,9 @@
 			The paytable of the slot machine
 			AV for id: [integer] - DO NOT MODIFY
 			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
-			AV for basePayout: [integer value greater than 0]
-			
-			
-			A->F4
-			B->F3
-			C->F2
-			D->F1
-			E->M5
-			F->M4
-			G->M3
-			H->M2
-			I->M1
-			J->LO
-			S->B1
-			add B2: weather beacon bonus
-			Z->B3
-			
+			AV for basePayout: [integer value greater than 0] 
 		-->
-		<!-- change type to 'scatter' -->
+		<!-- change type to 'scatter', add new type 'linescatter'-->
 		<bonusPayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
 		<bonusPayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
 		<bonusPayTableEntry winCode="0001" sequence="AAAAA" basePayout="100" type="basic"  />

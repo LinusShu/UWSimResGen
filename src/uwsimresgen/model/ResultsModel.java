@@ -33,11 +33,11 @@ public class ResultsModel {
 	public static String PAYLINES_TABLE_NAME = "Paylines";
 
 	public static enum SymbolType {
-		BASIC, SCATTER, BONUS, UNKNOWN
+		BASIC, SCATTER, BONUS, WBBONUS, UNKNOWN
 	}
 
 	public static enum WinType {
-		BASIC, SCATTER, BONUS, UNKNOWN
+		BASIC, SCATTER, BONUS, LINESCATTER, UNKNOWN
 	}
 
 	public static final int REEL_TOP = 0;
@@ -966,6 +966,7 @@ public class ResultsModel {
 		}
 	}
 
+	//TODO: modify the spinOdds to be probability of getting different payout amount on WBBonus
 	private void readBonusSpinOdds(Document doc) {
 		// Read Bonus Spin Odds
 		NodeList list = doc.getElementsByTagName("bonusSpinOdd");
@@ -1069,16 +1070,18 @@ public class ResultsModel {
 	}
 
 	private SymbolType convertToSymbolType(String value, String id) {
-		if (value.toLowerCase().compareTo("scatter") == 0) {
+		if (value.toLowerCase().equals("scatter")) {
 			return SymbolType.SCATTER;
-		} else if (value.toLowerCase().compareTo("bonus") == 0) {
+		} else if (value.toLowerCase().equals("bonus")) {
 			return SymbolType.BONUS;
-		} else if (value.toLowerCase().compareTo("basic") == 0) {
+		} else if (value.toLowerCase().equals("basic")) {
 			return SymbolType.BASIC;
+		} else if (value.toLowerCase().equals("wbbonus")) {
+			return SymbolType.WBBONUS;
 		} else {
 			this.addErrorToLog("Symbol [id:"
 					+ id
-					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter'.");
+					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'wbbonus'.");
 			return SymbolType.UNKNOWN;
 		}
 	}
@@ -1090,10 +1093,12 @@ public class ResultsModel {
 			return WinType.BONUS;
 		} else if (value.toLowerCase().compareTo("basic") == 0) {
 			return WinType.BASIC;
+		} else if (value.toLowerCase().compareTo("linescatter") == 0) {
+			return WinType.LINESCATTER;
 		} else {
 			this.addErrorToLog("PayTableEntry [id:"
 					+ id
-					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter'.");
+					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'linescatter'.");
 			return WinType.UNKNOWN;
 		}
 	}
