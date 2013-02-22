@@ -12,19 +12,19 @@
 		<!-- TODO: - add B2 type="wbbonus"  
 					B2 in base mode: B2B2B2## in any horizontal line even not wagered on 
 				   - map to symbol on the PAR sheet:
-			A->F4
-			B->F3
-			C->F2
-			D->F1
-			E->M5
-			F->M4
-			G->M3
-			H->M2
-			I->M1
-			J->LO
-			S->B1
-			add B2: weather beacon bonus
-			Z->B3	 
+			A->F4->WEST
+			B->F3->EAST
+			C->F2->SOUTH
+			D->F1->NORTH
+			E->M5->HORSE
+			F->M4->SHEEP
+			G->M3->ROOSTER
+			H->M2->PIG
+			I->M1->COW
+			J->LO->MONEY STORM
+			S->B1->FARMER(scatter)
+			W->B2->WEATHER BEACON
+			Z->B3->TORNADO(free spins + award)	 
 		-->
 		<symbol id="0" 	type="basic" 	alias="A" />
 		<symbol id="1" 	type="basic" 	alias="B" />
@@ -37,7 +37,7 @@
 		<symbol id="8" 	type="basic" 	alias="I" />
 		<symbol id="9" 	type="basic" 	alias="J" />
 		<symbol id="10" type="scatter" 	alias="S" />
-		<symbol id="11" type="wbbonus" 	alias="B2" />
+		<symbol id="11" type="wbbonus" 	alias="W" />
 		<symbol id="12" type="bonus"    alias="Z" />
 	</symbols>
 	<payLines>
@@ -72,7 +72,7 @@
 			The paytable of the slot machine
 			AV for id: [integer] - DO NOT MODIFY
 			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
-			AV for basePayout: [integer value greater than 0]
+			AV for basePayout: [integer value greater than 0, -9999 is a bad payout]
 		-->
 		<basePayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
 		<basePayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
@@ -151,9 +151,11 @@
 		
 		<basePayTableEntry winCode="0011" sequence="SSSSS" basePayout="100" type="scatter"  />
 		
-		<basePayTableEntry winCode="0012" sequence="ZZZ##" basePayout="0"  type="bonus" />
-		<basePayTableEntry winCode="0012" sequence="ZZZZ#" basePayout="0" type="bonus" />
-		<basePayTableEntry winCode="0012" sequence="ZZZZZ" basePayout="0"  type="bonus" />
+		<basePayTableEntry winCode="0012" sequence="ZZZ##" basePayout="25"  type="bonus" />
+		<basePayTableEntry winCode="0012" sequence="ZZZZ#" basePayout="100" type="bonus" />
+		<basePayTableEntry winCode="0012" sequence="ZZZZZ" basePayout="250"  type="bonus" />
+		
+		<basePayTableEntry winCode="0013" sequence="##WWW" basePayout="-1" type="wbbonus" />
 	</basePayTable>
 	<bonusPayTable>
 		<!-- bonusPayTableEntry Info
@@ -281,8 +283,8 @@
 		-->
 		<!-- TODO:
 			change the symbols to match 90% version symbol table -->
-		<reelStop id="0" r1="J" r2="J" r3="A" r4="G" r5="J" />
-		<reelStop id="1" r1="C" r2="E" r3="D" r4="I" r5="D" />
+		<reelStop id="0" r1="J" r2="J" r3="W" r4="G" r5="J" />
+		<reelStop id="1" r1="C" r2="E" r3="D" r4="W" r5="D" />
 		<reelStop id="2" r1="H" r2="D" r3="F" r4="A" r5="G" />
 		<reelStop id="3" r1="D" r2="H" r3="S" r4="B" r5="B" />
 		<reelStop id="4" r1="G" r2="A" r3="G" r4="F" r5="Z" />
@@ -290,30 +292,30 @@
 		<reelStop id="6" r1="F" r2="C" r3="J" r4="Z" r5="C" />
 		<reelStop id="7" r1="B" r2="I" r3="I" r4="D" r5="G" />
 		<reelStop id="8" r1="E" r2="D" r3="C" r4="E" r5="Z" />
-		<reelStop id="9" r1="S" r2="G" r3="B" r4="A" r5="I" />
+		<reelStop id="9" r1="S" r2="G" r3="W" r4="A" r5="I" />
 		<reelStop id="10" r1="I" r2="J" r3="G" r4="G" r5="D" />
-		<reelStop id="11" r1="D" r2="E" r3="F" r4="J" r5="E" />
+		<reelStop id="11" r1="D" r2="E" r3="F" r4="W" r5="E" />
 		<reelStop id="12" r1="H" r2="C" r3="Z" r4="I" r5="B" />
 		<reelStop id="13" r1="Z" r2="H" r3="H" r4="C" r5="H" />
-		<reelStop id="14" r1="G" r2="Z" r3="C" r4="F" r5="A" />
+		<reelStop id="14" r1="G" r2="Z" r3="C" r4="F" r5="W" />
 		<reelStop id="15" r1="D" r2="F" r3="J" r4="Z" r5="E" />
 		<reelStop id="16" r1="F" r2="A" r3="E" r4="H" r5="B" />
 		<reelStop id="17" r1="J" r2="I" r3="B" r4="D" r5="F" />
-		<reelStop id="18" r1="E" r2="J" r3="D" r4="J" r5="A" />
+		<reelStop id="18" r1="E" r2="J" r3="W" r4="J" r5="W" />
 		<reelStop id="19" r1="B" r2="G" r3="H" r4="G" r5="G" />
 		<reelStop id="20" r1="I" r2="C" r3="E" r4="C" r5="B" />
-		<reelStop id="21" r1="Z" r2="E" r3="J" r4="A" r5="I" />
+		<reelStop id="21" r1="Z" r2="E" r3="W" r4="W" r5="I" />
 		<reelStop id="22" r1="C" r2="Z" r3="F" r4="I" r5="D" />
 		<reelStop id="23" r1="G" r2="H" r3="A" r4="C" r5="H" />
 		<reelStop id="24" r1="B" r2="B" r3="G" r4="F" r5="S" />
 		<reelStop id="25" r1="Z" r2="F" r3="Z" r4="J" r5="I" />
 		<reelStop id="26" r1="F" r2="C" r3="H" r4="H" r5="A" />
 		<reelStop id="27" r1="B" r2="I" r3="B" r4="D" r5="H" />
-		<reelStop id="28" r1="E" r2="D" r3="I" r4="E" r5="G" />
-		<reelStop id="29" r1="C" r2="Z" r3="C" r4="S" r5="F" />
+		<reelStop id="28" r1="E" r2="D" r3="I" r4="E" r5="W" />
+		<reelStop id="29" r1="C" r2="Z" r3="W" r4="S" r5="F" />
 		<reelStop id="30" r1="H" r2="B" r3="E" r4="B" r5="C" />
-		<reelStop id="31" r1="A" r2="F" r3="A" r4="E" r5="J" />
-		<reelStop id="32" r1="Z" r2="S" r3="I" r4="A" r5="E" />
+		<reelStop id="31" r1="A" r2="F" r3="A" r4="E" r5="W" />
+		<reelStop id="32" r1="Z" r2="S" r3="I" r4="W" r5="E" />
 		<reelStop id="33" r1="I" r2="B" r3="D" r4="H" r5="C" />
 		<reelStop id="34" r1="A" r2="G" r3="G" r4="B" r5="A" />
 	</reelMappings>

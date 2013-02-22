@@ -37,7 +37,7 @@ public class ResultsModel {
 	}
 
 	public static enum WinType {
-		BASIC, SCATTER, BONUS, LINESCATTER, UNKNOWN
+		BASIC, SCATTER, BONUS, LINESCATTER, WBBONUS, UNKNOWN
 	}
 
 	public static final int REEL_TOP = 0;
@@ -407,7 +407,7 @@ public class ResultsModel {
 						Database.createConnection();
 						Database.setMaxLines(ResultsModel.this.paylines.size());
 
-						// Add symbols
+						// Add symbols to the database
 						if (ResultsModel.this.symbols != null
 								&& ResultsModel.this.symbols.size() > 0) {
 							for (int i = 0; i < ResultsModel.this.symbols
@@ -1070,13 +1070,13 @@ public class ResultsModel {
 	}
 
 	private SymbolType convertToSymbolType(String value, String id) {
-		if (value.toLowerCase().equals("scatter")) {
+		if (value.toLowerCase().compareTo("scatter") == 0) {
 			return SymbolType.SCATTER;
-		} else if (value.toLowerCase().equals("bonus")) {
+		} else if (value.toLowerCase().compareTo("bonus") == 0) {
 			return SymbolType.BONUS;
-		} else if (value.toLowerCase().equals("basic")) {
+		} else if (value.toLowerCase().compareTo("basic") == 0) {
 			return SymbolType.BASIC;
-		} else if (value.toLowerCase().equals("wbbonus")) {
+		} else if (value.toLowerCase().compareTo("wbbonus") == 0) {
 			return SymbolType.WBBONUS;
 		} else {
 			this.addErrorToLog("Symbol [id:"
@@ -1095,10 +1095,12 @@ public class ResultsModel {
 			return WinType.BASIC;
 		} else if (value.toLowerCase().compareTo("linescatter") == 0) {
 			return WinType.LINESCATTER;
+		} else if (value.toLowerCase().compareTo("wbbonus") == 0) {
+			return WinType.WBBONUS;
 		} else {
 			this.addErrorToLog("PayTableEntry [id:"
 					+ id
-					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'linescatter'.");
+					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'linescatter', 'wbbonus'.");
 			return WinType.UNKNOWN;
 		}
 	}
