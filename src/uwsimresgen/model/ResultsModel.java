@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -39,6 +40,13 @@ public class ResultsModel {
 	public static enum WinType {
 		BASIC, SCATTER, BONUS, LINESCATTER, WBBONUS, UNKNOWN
 	}
+	
+	public static final int WBBonusPayTable[] = {2, 
+										5, 5, 5, 5, 
+										8, 8, 8, 8, 8, 8, 8, 8, 
+										10, 10, 10, 10, 10, 10, 10, 
+										15, 15, 15,
+										25, 25};
 
 	public static final int REEL_TOP = 0;
 	public static final int REEL_MID = 1;
@@ -94,13 +102,15 @@ public class ResultsModel {
 	private Boolean suffixAvailable = false;
 
 	private BlockingQueue<Result> resultqueue = new LinkedBlockingQueue<Result>();
-
+	private Random random;
+	
 	private Simulator simulator;
 	private OutputLog outputLog;
 
 	public ResultsModel() {
 		this.simulator = new Simulator(this);
 		this.outputLog = new OutputLog("log");
+		this.random = new Random();
 	}
 
 	public void AddView(IView view) {
@@ -572,7 +582,7 @@ public class ResultsModel {
 	}
 
 	/* CONSUMER */
-
+	// NOT USED!!!!
 	private void consume() {
 		Thread t = new Thread() {
 			public void run() {
@@ -1203,17 +1213,24 @@ public class ResultsModel {
 
 		private ArrayList<Integer> linedollarwinamounts;
 		private ArrayList<Integer> linecreditwinamounts;
+		private ArrayList<Integer> wbbonuscreditwin;
 		private int maxlines = 0;
 
 		public Result(int maxlines) {
 			this.maxlines = maxlines;
 			linedollarwinamounts = new ArrayList<Integer>();
 			for (int i = 0; i < this.maxlines; i++) {
-				linedollarwinamounts.add(-1);
+				linedollarwinamounts.add(0);
 			}
+			
 			linecreditwinamounts = new ArrayList<Integer>();
 			for (int i = 0; i < this.maxlines; i++) {
-				linecreditwinamounts.add(-1);
+				linecreditwinamounts.add(0);
+			}
+			
+			wbbonuscreditwin = new ArrayList<Integer>();
+			for (int i = 0; i < 3; i++) {
+				wbbonuscreditwin.add(0);
 			}
 		}
 
@@ -1241,11 +1258,17 @@ public class ResultsModel {
 			bonusactivated = false;
 			bonusspin = false;
 			freespinsawarded = 0;
+			
 			for (int i = 0; i < this.maxlines; i++) {
-				linedollarwinamounts.set(i, -1);
+				linedollarwinamounts.set(i, 0);
 			}
+			
 			for (int i = 0; i < this.maxlines; i++) {
-				linecreditwinamounts.set(i, -1);
+				linecreditwinamounts.set(i, 0);
+			}
+			
+			for (int i=0; i < this.wbbonuscreditwin.size(); i++) {
+				wbbonuscreditwin.set(i, 0);
 			}
 		}
 
@@ -1270,6 +1293,8 @@ public class ResultsModel {
 					+ Boolean.toString(bonusactivated) + " isbonusspin="
 					+ Boolean.toString(bonusspin) + " freespinsawarded="
 					+ Integer.toString(freespinsawarded)
+					+ " wbbonuscreditwin="
+					+ wbbonuscreditwin.toString()
 					+ " linedollarwinamounts="
 					+ linedollarwinamounts.toString()
 					+ " linecreditwinamounts="
@@ -1280,7 +1305,7 @@ public class ResultsModel {
 
 		public void addLineDollarWinAmount(int index, int value) {
 			if (index < this.linedollarwinamounts.size())
-				this.linedollarwinamounts.set(index, value);
+				this.linedollarwinamounts.set(index, (this.linedollarwinamounts.get(index) + value));
 			else
 				System.err
 						.println("AddLineWinAmount: Attempted to add line dollar win past max lines. Index: "
@@ -1289,10 +1314,19 @@ public class ResultsModel {
 
 		public void addLineCreditWinAmount(int index, int value) {
 			if (index < this.linecreditwinamounts.size())
-				this.linecreditwinamounts.set(index, value);
+				this.linecreditwinamounts.set(index, (this.linecreditwinamounts.get(index) + value));
 			else
 				System.err
 						.println("AddLineWinAmount: Attempted to add line credit win past max lines. Index: "
+								+ Integer.toString(index));
+		}
+		
+		public void addWBBonusCreditWin(int index, int value) {
+			if (index < this.wbbonuscreditwin.size())
+				this.wbbonuscreditwin.set(index, value);
+			else 
+				System.err
+						.println("AddWBBonusCreditWin: Attempted to add Weather Beacon Bonus credit win other than line 0, 1, or 2. Index: "
 								+ Integer.toString(index));
 		}
 
@@ -1374,6 +1408,10 @@ public class ResultsModel {
 
 		public void setLineCreditWinAmounts(ArrayList<Integer> value) {
 			this.linecreditwinamounts = value;
+		}
+		
+		public void setWBBonusCreditWin(ArrayList<Integer> value) {
+			this.wbbonuscreditwin = value;
 		}
 
 		public long getRecordNumber() {
@@ -1459,6 +1497,14 @@ public class ResultsModel {
 
 			return -1;
 		}
+		
+		public int getWBBonusCreditWinOn(int index) {
+			if (index >= 0 && index < this.wbbonuscreditwin.size()) {
+				return this.wbbonuscreditwin.get(index);
+			}
+			
+			return -1;
+		}
 
 		public double getFormattedLineDollarWinAmount(int index) {
 			if (index >= 0 && index < this.linedollarwinamounts.size()) {
@@ -1481,6 +1527,9 @@ public class ResultsModel {
 			return this.linecreditwinamounts;
 		}
 
+		public ArrayList<Integer> getWBBonusCreditWin() {
+			return this.wbbonuscreditwin;
+		}
 	}
 
 	public class Symbol {
@@ -1781,7 +1830,12 @@ public class ResultsModel {
 			r4stop = 0;
 			r5stop = 0;
 		}
-
+		
+		/**
+		 * Method used to simulate one spin.
+		 * 
+		 * @return   the Result object corresponding to this one spin.
+		 */
 		public Result simulateSpin() {
 			r = new Result(ResultsModel.this.paylines.size());
 			try {
@@ -1962,6 +2016,8 @@ public class ResultsModel {
 			updateResult(sr, line);
 		}
 
+		// This method updates the result of one spin when each payline/played line is checked
+		// TODO: do major damage to this one!!!
 		private void updateResult(SimpleResult sr, int line) {
 			int dollarswon = ((sr.bestPayout + sr.bestScatterPayout) * currblock.denomination);
 			int creditswon = (sr.bestPayout + sr.bestScatterPayout);
@@ -1969,8 +2025,10 @@ public class ResultsModel {
 			// dollarswon = ResultsModel.roundTwoDecimals(dollarswon);
 			// creditswon = ResultsModel.roundTwoDecimals(creditswon);
 
-			r.setDollarsWon(r.getDollarsWon() + dollarswon);
-			r.setCreditsWon(r.getCreditsWon() + creditswon);
+			
+			// if the simpleResult triggers the bonus mode
+			// TODO: - record which line triggers FreeStormScatterBonus
+			//       - allow multiple FreeStormScatterBonus
 			if (sr.activatedBonus) {
 				r.setBonusActivated(true);
 				if (sr.bestSpinsAwarded > 0) {
@@ -1979,21 +2037,41 @@ public class ResultsModel {
 					r.setFreeSpinsAwarded(getAwardedSpins());
 				}
 			}
+			// if the simpleResult has a Scatter win
 			if (sr.bestScatterPayout > 0)
 				r.setScatter(true);
+			
+			// if the simpleResult has a Weather Beacon Bonus win
+			if (sr.wbBonusMultiplier > 0 && line < 3) {
+				int wbcreditswon = this.getWBBonusCredit(sr, r);
+				
+				creditswon += wbcreditswon;
+				r.addWBBonusCreditWin(line, wbcreditswon);
+			}
+				
+			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
 			if (sr.bestPayout > 0 || sr.bestScatterPayout > 0
-					|| sr.activatedBonus)
+					|| sr.activatedBonus || sr.wbBonusMultiplier > 0)
 				r.incrementLinesWon();
-
+			
+			// add the win to a particular line.
+			//TODO: change addLineDollarWinAmount to addScatterWinAmount()
 			r.addLineDollarWinAmount(line, dollarswon);
 			r.addLineCreditWinAmount(line, creditswon);
+			
+			// update the wins of the current spin.
+			r.setDollarsWon(r.getDollarsWon() + dollarswon);
+			r.setCreditsWon(r.getCreditsWon() + creditswon);
 		}
-
+		
+		// Used to determine the best result on one payline using one paytable entry
 		private void calculateSimpleResult(PaytableEntry pe,
 				String winsequence, SimpleResult simpleResult) {
 			boolean match = true;
 			String sequence = pe.getSequence();
-
+			int slice = random.nextInt(25);
+			
+			//check if the winsequence matches the paytable sequence
 			for (int i = 0; i < sequence.length(); i++) {
 				if (i >= winsequence.length()) {
 					match = false;
@@ -2008,6 +2086,7 @@ public class ResultsModel {
 				}
 			}
 
+			//if it's a match, determine the type of win and update SimpleResult accordingly.
 			if (match) {
 				if (pe.getType() == WinType.BASIC) {
 					if (pe.getPayout() >= simpleResult.bestPayout) {
@@ -2017,15 +2096,22 @@ public class ResultsModel {
 					if (pe.getPayout() >= simpleResult.bestScatterPayout) {
 						simpleResult.bestScatterPayout = pe.getPayout();
 					}
+					
+				//TODO: Do some damage to this one here!!!!
 				} else if (pe.getType() == WinType.BONUS) {
 					simpleResult.activatedBonus = true;
 					if (pe.getPayout() >= simpleResult.bestSpinsAwarded) {
 						simpleResult.bestSpinsAwarded = (short) pe.getPayout();
 					}
+				} else if (pe.getType() == WinType.WBBONUS) {
+					simpleResult.wbBonusMultiplier = lookUpWBBonusPaytable(slice);	
 				}
 			}
+			
+			//if not a match, SimpleResult will have every win amount set to defaults as 0s.
 		}
-
+		
+		// Used to determine the amount of free spins awarded.
 		private short getAwardedSpins() {
 
 			int totalpie = 0;
@@ -2050,14 +2136,36 @@ public class ResultsModel {
 
 			return spinsawarded;
 		}
-
+		
+		private int getWBBonusCredit(SimpleResult sr, Result r) {
+			int creditwon = 0;
+			
+			// if in Base mode
+			if (!this.model.bonusactive) {
+				creditwon = sr.wbBonusMultiplier * r.getLineBet() * r.getNumLines();
+			// if in FreeStorm Scatter Bonus mode
+			// NOTE: For the simulation purpose, the line bet is always constant, 
+			//		 so no need keep track of the FreeStorm Bonus mode initiating line bet. 
+			} else {
+				creditwon = sr.wbBonusMultiplier * r.getLineBet() * this.model.paylines.size();
+			}
+			
+			return creditwon;
+		}
+		
+		private int lookUpWBBonusPaytable(int index) {
+			return this.model.WBBonusPayTable[index];
+		}
+		
+		// the result on one payline/played line of one single spin
 		class SimpleResult {
 
 			protected int bestPayout = 0;
 			protected int bestScatterPayout = 0;
 			protected boolean activatedBonus = false;
 			protected short bestSpinsAwarded = 0;
-
+			protected int wbBonusMultiplier = 0;
+			
 			public SimpleResult() {
 
 			}

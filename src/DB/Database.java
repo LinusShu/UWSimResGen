@@ -286,11 +286,17 @@ public class Database {
 		if (!Database.doesTableExist(tableName)) {
 			String lineWins_DOLLARS = "";
 			for (int i = 0; i < maxLines; i++) {
-				lineWins_DOLLARS += ", LINE" + i + "WIN_DOLLARS float NOT NULL";
+				lineWins_DOLLARS += ", LINE" + i + "WIN_DOLLARS float NOT NULL"; //change this to SCATTER_CREDITS
 			}
 			String lineWins_CREDITS = "";
 			for (int i = 0; i < maxLines; i++) {
 				lineWins_CREDITS += ", LINE" + i
+						+ "WIN_CREDITS smallint NOT NULL";
+			}
+			
+			String wbBonus_CREDITS = "";
+			for (int i=0; i < 3; i++) {
+				wbBonus_CREDITS += ", WBBONUS" + i
 						+ "WIN_CREDITS smallint NOT NULL";
 			}
 
@@ -311,7 +317,9 @@ public class Database {
 					+ "SCATTER boolean NOT NULL, "
 					+ "BONUSACTIVATED boolean NOT NULL, "
 					+ "BONUSSPIN boolean NOT NULL, "
-					+ "FREESPINSAWARDED smallint NOT NULL" + lineWins_DOLLARS
+					+ "FREESPINSAWARDED smallint NOT NULL" 
+					+ wbBonus_CREDITS
+					+ lineWins_DOLLARS
 					+ lineWins_CREDITS + ")";
 			Database.createTable(tableName, query);
 		}
@@ -335,14 +343,24 @@ public class Database {
 				lineWins_CreditsQ += ",?";
 			}
 		}
-
+		
+		String wbbWins_Credits = "";
+		String wbbWins_CreditsQ = "";
+		if (result.getWBBonusCreditWin() != null
+				&& result.getWBBonusCreditWin().size() > 0) {
+			for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
+				wbbWins_Credits += ", WBBONUS" + i + "WIN_CREDITS";
+				wbbWins_CreditsQ += ",?";
+			}
+		}
+		
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
 				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, DOLLARSWON, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
-				+ lineWins_Dollars + lineWins_Credits + ") "
+				+ wbbWins_Credits + lineWins_Dollars + lineWins_Credits + ") "  //TODO change lineWin_Dollars
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
-				+ lineWins_DollarsQ + lineWins_CreditsQ + ")";
+				+ wbbWins_CreditsQ + lineWins_DollarsQ + lineWins_CreditsQ + ")";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
@@ -365,6 +383,15 @@ public class Database {
 			st.setShort(17, result.getFreeSpinsAwarded());
 
 			int startingIndex = 18;
+
+			if (result.getWBBonusCreditWin() != null
+					&& result.getWBBonusCreditWin().size() > 0) {
+				for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
+					st.setDouble(startingIndex, result.getWBBonusCreditWinOn(i));
+					startingIndex++;
+				}
+			}
+			
 			if (result.getLineDollarWinAmounts() != null
 					&& result.getLineDollarWinAmounts().size() > 0) {
 				for (int i = 0; i < result.getLineDollarWinAmounts().size(); i++) {
@@ -382,6 +409,7 @@ public class Database {
 					startingIndex++;
 				}
 			}
+			
 
 			st.addBatch();
 			batchRequests++;

@@ -7,6 +7,6 @@
 			denomination - integer > 0 ( note: you are specifying the number of cents as an integer value, ie: 1 represents 1 cent )
 			numspins - integer > 0
 		-->
-		<block numlines="20" linebet="1" denomination="1" numspins="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="10000" />
 	</blocks>
 </data>
