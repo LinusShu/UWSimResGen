@@ -93,38 +93,38 @@ public class Database {
 	static PreparedStatement st = null;
 
 	static int batchRequests = 0;
-
-	public static void insertIntoTable(String tableName, BonusSpinOdd spinOdd)
-			throws SQLException {
-		tableName = tableName.toUpperCase();
-		// If does not exist, create the table
-		if (!Database.doesTableExist(tableName)) {
-			String query = "create table " + tableName + " "
-					+ "(SPINID bigint NOT NULL, " + "SLICE integer NOT NULL, "
-					+ "SPINSAWARDED smallint NOT NULL)";
-			Database.createTable(tableName, query);
-		}
-
-		// Otherwise, add it to DB.
-		String query = "insert into " + tableName
-				+ "(SPINID,SLICE,SPINSAWARDED) " + "values(?,?,?)";
-		try {
-			if (st == null)
-				st = conn.prepareStatement(query);
-			st.setLong(1, spinOdd.getSpinID());
-			st.setInt(2, spinOdd.getSlice());
-			st.setShort(3, spinOdd.getSpinsAwarded());
-
-			st.addBatch();
-			batchRequests++;
-			if (batchRequests >= 1000) {
-				batchRequests = 0;
-				st.executeBatch();
-			}
-		} catch (SQLException e) {
-			throw e;
-		}
-	}
+	
+//	public static void insertIntoTable(String tableName, BonusSpinOdd spinOdd)
+//			throws SQLException {
+//		tableName = tableName.toUpperCase();
+//		// If does not exist, create the table
+//		if (!Database.doesTableExist(tableName)) {
+//			String query = "create table " + tableName + " "
+//					+ "(SPINID bigint NOT NULL, " + "SLICE integer NOT NULL, "
+//					+ "SPINSAWARDED smallint NOT NULL)";
+//			Database.createTable(tableName, query);
+//		}
+//
+//		// Otherwise, add it to DB.
+//		String query = "insert into " + tableName
+//				+ "(SPINID,SLICE,SPINSAWARDED) " + "values(?,?,?)";
+//		try {
+//			if (st == null)
+//				st = conn.prepareStatement(query);
+//			st.setLong(1, spinOdd.getSpinID());
+//			st.setInt(2, spinOdd.getSlice());
+//			st.setShort(3, spinOdd.getSpinsAwarded());
+//
+//			st.addBatch();
+//			batchRequests++;
+//			if (batchRequests >= 1000) {
+//				batchRequests = 0;
+//				st.executeBatch();
+//			}
+//		} catch (SQLException e) {
+//			throw e;
+//		}
+//	}
 
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {

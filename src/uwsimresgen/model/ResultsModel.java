@@ -27,7 +27,7 @@ public class ResultsModel {
 	public static String RESULTS_TABLE_NAME = "SpinResults";
 	public static String BASE_PAYTABLE_TABLE_NAME = "BasePaytable";
 	public static String BONUS_PAYTABLE_TABLE_NAME = "BonusPaytable";
-	public static String BONUS_SPIN_ODDS_TABLE_NAME = "BonusSpinOdds";
+//	public static String BONUS_SPIN_ODDS_TABLE_NAME = "BonusSpinOdds";
 	public static String REELMAPPINGS_TABLE_NAME = "ReelMappings";
 	public static String SYMBOLS_TABLE_NAME = "Symbols";
 	public static String BLOCKS_TABLE_NAME = "Blocks";
@@ -60,7 +60,7 @@ public class ResultsModel {
 	public static final int REEL_FIVE = 4;
 
 	public static final int PAYTABLE_BADPAYOUT = -99999;
-	public static final int BONUSSPIN_BADINTEGER = -99999;
+//	public static final int BONUSSPIN_BADINTEGER = -99999;
 
 	private ArrayList<Result> results = new ArrayList<Result>();
 	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
@@ -68,7 +68,7 @@ public class ResultsModel {
 	private ArrayList<Payline> paylines = new ArrayList<Payline>();
 	private ArrayList<PaytableEntry> basepaytable = new ArrayList<PaytableEntry>();
 	private ArrayList<PaytableEntry> bonuspaytable = new ArrayList<PaytableEntry>();
-	private ArrayList<BonusSpinOdd> bonusspinodds = new ArrayList<BonusSpinOdd>();
+//	private ArrayList<BonusSpinOdd> bonusspinodds = new ArrayList<BonusSpinOdd>();
 	private ArrayList<String> reel1 = new ArrayList<String>();
 	private ArrayList<String> reel2 = new ArrayList<String>();
 	private ArrayList<String> reel3 = new ArrayList<String>();
@@ -261,9 +261,9 @@ public class ResultsModel {
 		return this.buildDBTableName(ResultsModel.BONUS_PAYTABLE_TABLE_NAME);
 	}
 
-	public String getBonusSpinOddsDBTableName() {
-		return this.buildDBTableName(ResultsModel.BONUS_SPIN_ODDS_TABLE_NAME);
-	}
+//	public String getBonusSpinOddsDBTableName() {
+//		return this.buildDBTableName(ResultsModel.BONUS_SPIN_ODDS_TABLE_NAME);
+//	}
 
 	public String getReelMappingsDBTableName() {
 		return this.buildDBTableName(ResultsModel.REELMAPPINGS_TABLE_NAME);
@@ -483,18 +483,18 @@ public class ResultsModel {
 							Database.flushBatch();
 						}
 						
-						if (ResultsModel.this.bonusspinodds != null
-								&& ResultsModel.this.bonusspinodds.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.bonusspinodds
-									.size(); i++) {
-								BonusSpinOdd spinOdd = ResultsModel.this.bonusspinodds
-										.get(i);
-								spinOdd.setSpinID(i + 1);
-								Database.insertIntoTable(
-										getBonusSpinOddsDBTableName(), spinOdd);
-							}
-							Database.flushBatch();
-						}
+//						if (ResultsModel.this.bonusspinodds != null
+//								&& ResultsModel.this.bonusspinodds.size() > 0) {
+//							for (int i = 0; i < ResultsModel.this.bonusspinodds
+//									.size(); i++) {
+//								BonusSpinOdd spinOdd = ResultsModel.this.bonusspinodds
+//										.get(i);
+//								spinOdd.setSpinID(i + 1);
+//								Database.insertIntoTable(
+//										getBonusSpinOddsDBTableName(), spinOdd);
+//							}
+//							Database.flushBatch();
+//						}
 
 					} catch (Exception e) {
 						ResultsModel.this.setError();
@@ -647,9 +647,9 @@ public class ResultsModel {
 		this.outputLog
 				.outputStringAndNewLine("Set Bonus Paytable DB Table Name: "
 						+ this.getBonusPaytableDBTableName());
-		this.outputLog
-				.outputStringAndNewLine("Set Bonus Spin Odds DB Table Name: "
-						+ this.getBonusSpinOddsDBTableName());
+//		this.outputLog
+//				.outputStringAndNewLine("Set Bonus Spin Odds DB Table Name: "
+//						+ this.getBonusSpinOddsDBTableName());
 		this.outputLog
 				.outputStringAndNewLine("Set Reel Mappings DB Table Name: "
 						+ this.getReelMappingsDBTableName());
@@ -808,7 +808,7 @@ public class ResultsModel {
 			this.readPaylines(doc);
 			this.readBasePaytable(doc);
 			this.readBonusPaytable(doc);
-			this.readBonusSpinOdds(doc);
+//			this.readBonusSpinOdds(doc);
 			this.readReelMapping(doc);
 		} catch (Exception e) {
 			this.addErrorToLog("An exception occurred reading configuration file. Exception message: "
@@ -976,45 +976,44 @@ public class ResultsModel {
 		}
 	}
 
-	//TODO: modify the spinOdds to be probability of getting different payout amount on WBBonus
-	private void readBonusSpinOdds(Document doc) {
-		// Read Bonus Spin Odds
-		NodeList list = doc.getElementsByTagName("bonusSpinOdd");
-		for (int i = 0; i < list.getLength(); i++) {
-			Node node = list.item(i);
-			if (node.getNodeType() == Node.ELEMENT_NODE) {
-				Element e = (Element) node;
-
-				short spinsAwarded = (short) BONUSSPIN_BADINTEGER;
-				int slice = BONUSSPIN_BADINTEGER;
-				try {
-					spinsAwarded = Short.parseShort(e
-							.getAttribute("spinsAwarded")); // Integer.parseInt(e.getAttribute("spinsAwarded"));
-				} catch (NumberFormatException nfe) {
-					this.errorLog.add("BonusSpinOdd[" + Integer.toString(i)
-							+ "] Invalid value for 'spinsAwarded'. Value='"
-							+ e.getAttribute("spinsAwarded") + "'");
-				}
-
-				try {
-					slice = Integer.parseInt(e.getAttribute("slice"));
-				} catch (NumberFormatException nfe) {
-					this.errorLog.add("BonusSpinOdd[" + Integer.toString(i)
-							+ "] Invalid value for 'slice'. Value='"
-							+ e.getAttribute("slice") + "'");
-				}
-
-				if (spinsAwarded != BONUSSPIN_BADINTEGER
-						&& slice != BONUSSPIN_BADINTEGER) {
-
-					BonusSpinOdd bso = new BonusSpinOdd();
-					bso.setSpinsAwarded(spinsAwarded);
-					bso.setSlice(slice);
-					this.bonusspinodds.add(bso);
-				}
-			}
-		}
-	}
+//	private void readBonusSpinOdds(Document doc) {
+//		// Read Bonus Spin Odds
+//		NodeList list = doc.getElementsByTagName("bonusSpinOdd");
+//		for (int i = 0; i < list.getLength(); i++) {
+//			Node node = list.item(i);
+//			if (node.getNodeType() == Node.ELEMENT_NODE) {
+//				Element e = (Element) node;
+//
+//				short spinsAwarded = (short) BONUSSPIN_BADINTEGER;
+//				int slice = BONUSSPIN_BADINTEGER;
+//				try {
+//					spinsAwarded = Short.parseShort(e
+//							.getAttribute("spinsAwarded")); // Integer.parseInt(e.getAttribute("spinsAwarded"));
+//				} catch (NumberFormatException nfe) {
+//					this.errorLog.add("BonusSpinOdd[" + Integer.toString(i)
+//							+ "] Invalid value for 'spinsAwarded'. Value='"
+//							+ e.getAttribute("spinsAwarded") + "'");
+//				}
+//
+//				try {
+//					slice = Integer.parseInt(e.getAttribute("slice"));
+//				} catch (NumberFormatException nfe) {
+//					this.errorLog.add("BonusSpinOdd[" + Integer.toString(i)
+//							+ "] Invalid value for 'slice'. Value='"
+//							+ e.getAttribute("slice") + "'");
+//				}
+//
+//				if (spinsAwarded != BONUSSPIN_BADINTEGER
+//						&& slice != BONUSSPIN_BADINTEGER) {
+//
+//					BonusSpinOdd bso = new BonusSpinOdd();
+//					bso.setSpinsAwarded(spinsAwarded);
+//					bso.setSlice(slice);
+//					this.bonusspinodds.add(bso);
+//				}
+//			}
+//		}
+//	}
 
 	private void readReelMapping(Document doc) {
 		// Read Reel Mapping
@@ -1162,7 +1161,7 @@ public class ResultsModel {
 		this.paylines.clear();
 		this.basepaytable.clear();
 		this.bonuspaytable.clear();
-		this.bonusspinodds.clear();
+//		this.bonusspinodds.clear();
 		this.reel1.clear();
 		this.reel2.clear();
 		this.reel3.clear();
@@ -1742,38 +1741,38 @@ public class ResultsModel {
 		}
 	}
 
-	public class BonusSpinOdd {
-		private short spinsawarded = 0;
-		private int slice = 0;
-		private int spinID;
-
-		public BonusSpinOdd() {
-		}
-
-		public void setSpinsAwarded(short value) {
-			this.spinsawarded = value;
-		}
-
-		public void setSpinID(int value) {
-			this.spinID = value;
-		}
-
-		public void setSlice(int value) {
-			this.slice = value;
-		}
-
-		public int getSpinID() {
-			return this.spinID;
-		}
-
-		public short getSpinsAwarded() {
-			return this.spinsawarded;
-		}
-
-		public int getSlice() {
-			return this.slice;
-		}
-	}
+//	public class BonusSpinOdd {
+//		private short spinsawarded = 0;
+//		private int slice = 0;
+//		private int spinID;
+//
+//		public BonusSpinOdd() {
+//		}
+//
+//		public void setSpinsAwarded(short value) {
+//			this.spinsawarded = value;
+//		}
+//
+//		public void setSpinID(int value) {
+//			this.spinID = value;
+//		}
+//
+//		public void setSlice(int value) {
+//			this.slice = value;
+//		}
+//
+//		public int getSpinID() {
+//			return this.spinID;
+//		}
+//
+//		public short getSpinsAwarded() {
+//			return this.spinsawarded;
+//		}
+//
+//		public int getSlice() {
+//			return this.slice;
+//		}
+//	}
 
 	/*
 	 * class ReelStop { private String r1 = ""; private String r2 = ""; private
@@ -2071,7 +2070,8 @@ public class ResultsModel {
 			String sequence = pe.getSequence();
 			int slice = random.nextInt(25);
 			
-			//check if the winsequence matches the paytable sequence
+			//TODO: need new ways of checking wins in free storm scatter bonus 
+			// check if the win sequence matches the paytable sequence
 			for (int i = 0; i < sequence.length(); i++) {
 				if (i >= winsequence.length()) {
 					match = false;
@@ -2086,7 +2086,7 @@ public class ResultsModel {
 				}
 			}
 
-			//if it's a match, determine the type of win and update SimpleResult accordingly.
+			// if it's a match, determine the type of win and update SimpleResult accordingly.
 			if (match) {
 				if (pe.getType() == WinType.BASIC) {
 					if (pe.getPayout() >= simpleResult.bestPayout) {

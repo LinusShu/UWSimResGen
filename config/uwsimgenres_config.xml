@@ -164,7 +164,7 @@
 			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol]
 			AV for basePayout: [integer value greater than 0] 
 		-->
-		<!-- change type to 'scatter', add new type 'linescatter'-->
+		<!-- TODO: change type to 'scatter', add new type 'linescatter'-->
 		<bonusPayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="basic" /> 
 		<bonusPayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="basic"  />
 		<bonusPayTableEntry winCode="0001" sequence="AAAAA" basePayout="100" type="basic"  />
@@ -263,28 +263,13 @@
 		
 		<bonusPayTableEntry winCode="0013" sequence="##WWW" basePayout="0" type="wbbonus" />
 	</bonusPayTable>
-	<bonusSpinOdds>
-		<!-- bonusSpinOdd Info
-			The probability table for awarding bonus spins. The probability of an entry hitting is P(e)=(slice / ( sum of slices ))
-			AV for spinsAwarded: [integer greater than 0] - amount of spins given to player if this entry hit
-			AV for slice: [integer greater than 0] - slice of probability pie. 
-		-->
-		<bonusSpinOdd spinsAwarded="5" slice="50" />
-		<bonusSpinOdd spinsAwarded="6" slice="10" />
-		<bonusSpinOdd spinsAwarded="7" slice="10" />
-		<bonusSpinOdd spinsAwarded="8" slice="10" />
-		<bonusSpinOdd spinsAwarded="9" slice="10" />
-		<bonusSpinOdd spinsAwarded="15" slice="5" />
-		<bonusSpinOdd spinsAwarded="20" slice="5" />
-	</bonusSpinOdds>
+
 	<reelMappings>
 		<!-- reelStop Info
 			The reel stops of the slot machine
 			AV for id: [integer value greater than or equal to 0] DO NOT MODIFY
 			AV for r1 to r5: [single character matching a symbol alias]
 		-->
-		<!-- TODO:
-			change the symbols to match 90% version symbol table -->
 		<reelStop id="0" r1="J" r2="J" r3="W" r4="G" r5="J" />
 		<reelStop id="1" r1="C" r2="E" r3="D" r4="W" r5="D" />
 		<reelStop id="2" r1="H" r2="D" r3="F" r4="A" r5="G" />
