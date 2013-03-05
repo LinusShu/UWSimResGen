@@ -8,10 +8,8 @@
 			AV for type: [basic|scatter|bonus|wbbonus]
 			AV for alias: [single character of alphabet, A to Z]
 		-->
-		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET -->
-		<!-- TODO: - add B2 type="wbbonus"  
-					B2 in base mode: B2B2B2## in any horizontal line even not wagered on 
-				   - map to symbol on the PAR sheet:
+		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET
+			Symbol Mappings:
 			A->F4->WEST
 			B->F3->EAST
 			C->F2->SOUTH

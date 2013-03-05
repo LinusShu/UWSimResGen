@@ -11,7 +11,6 @@ import java.util.ArrayList;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
-import uwsimresgen.model.ResultsModel.BonusSpinOdd;
 import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
 import uwsimresgen.model.ResultsModel.Result;
@@ -284,9 +283,9 @@ public class Database {
 		tableName = tableName.toUpperCase();
 		// If does not exist, create the table
 		if (!Database.doesTableExist(tableName)) {
-			String lineWins_DOLLARS = "";
+			String freeStormWin_CREDITS = "";
 			for (int i = 0; i < maxLines; i++) {
-				lineWins_DOLLARS += ", LINE" + i + "WIN_DOLLARS float NOT NULL"; //change this to SCATTER_CREDITS
+				freeStormWin_CREDITS += ", FREESTORM" + i + "WIN_CREDITS smallint NOT NULL"; //change this to SCATTER_CREDITS
 			}
 			String lineWins_CREDITS = "";
 			for (int i = 0; i < maxLines; i++) {
@@ -319,18 +318,18 @@ public class Database {
 					+ "BONUSSPIN boolean NOT NULL, "
 					+ "FREESPINSAWARDED smallint NOT NULL" 
 					+ wbBonus_CREDITS
-					+ lineWins_DOLLARS
+					+ freeStormWin_CREDITS
 					+ lineWins_CREDITS + ")";
 			Database.createTable(tableName, query);
 		}
 
-		String lineWins_Dollars = "";
-		String lineWins_DollarsQ = "";
-		if (result.getLineDollarWinAmounts() != null
-				&& result.getLineDollarWinAmounts().size() > 0) {
-			for (int i = 0; i < result.getLineDollarWinAmounts().size(); i++) {
-				lineWins_Dollars += ", LINE" + i + "WIN_DOLLARS";
-				lineWins_DollarsQ += ",?";
+		String freeStormWins_Credits = "";
+		String freeStormWins_CreditsQ = "";
+		if (result.getFreeStormWinAmounts() != null
+				&& result.getFreeStormWinAmounts().size() > 0) {
+			for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
+				freeStormWins_Credits += ", FREESTORM" + i + "WIN_CREDITS";
+				freeStormWins_CreditsQ += ",?";
 			}
 		}
 
@@ -358,9 +357,9 @@ public class Database {
 		String query = "insert into "
 				+ tableName
 				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, DOLLARSWON, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
-				+ wbbWins_Credits + lineWins_Dollars + lineWins_Credits + ") "  //TODO change lineWin_Dollars
+				+ wbbWins_Credits  + freeStormWins_Credits + lineWins_Credits + ") "  
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
-				+ wbbWins_CreditsQ + lineWins_DollarsQ + lineWins_CreditsQ + ")";
+				+ wbbWins_CreditsQ + freeStormWins_CreditsQ + lineWins_CreditsQ + ")";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
@@ -392,11 +391,11 @@ public class Database {
 				}
 			}
 			
-			if (result.getLineDollarWinAmounts() != null
-					&& result.getLineDollarWinAmounts().size() > 0) {
-				for (int i = 0; i < result.getLineDollarWinAmounts().size(); i++) {
+			if (result.getFreeStormWinAmounts() != null
+					&& result.getFreeStormWinAmounts().size() > 0) {
+				for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
 					st.setDouble(startingIndex,
-							result.getFormattedLineDollarWinAmount(i));
+							result.getFreeStormWinAmount(i));
 					startingIndex++;
 				}
 			}

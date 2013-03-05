@@ -30,7 +30,7 @@ public class ProcessingView extends JPanel implements IView {
 			+ ", " + ResultsModel.PAYLINES_TABLE_NAME
 			+ ", " + ResultsModel.BASE_PAYTABLE_TABLE_NAME
 			+ ", " + ResultsModel.BONUS_PAYTABLE_TABLE_NAME
-			+ ", " + ResultsModel.BONUS_SPIN_ODDS_TABLE_NAME
+//			+ ", " + ResultsModel.BONUS_SPIN_ODDS_TABLE_NAME
 			+ ", " + ResultsModel.REELMAPPINGS_TABLE_NAME
 		);
 	
