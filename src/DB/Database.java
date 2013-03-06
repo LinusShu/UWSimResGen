@@ -310,10 +310,10 @@ public class Database {
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "LINEBET smallint NOT NULL, "
 					+ "DENOMINATION float NOT NULL, "
-					+ "DOLLARSWON float NOT NULL, "
+//					+ "DOLLARSWON float NOT NULL, "
 					+ "CREDITSWON integer NOT NULL, "
 					+ "LINESWON smallint NOT NULL, "
-					+ "SCATTER boolean NOT NULL, "
+					+ "SCATTER integer NOT NULL, "
 					+ "BONUSACTIVATED boolean NOT NULL, "
 					+ "BONUSSPIN boolean NOT NULL, "
 					+ "FREESPINSAWARDED smallint NOT NULL" 
@@ -356,9 +356,9 @@ public class Database {
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
-				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, DOLLARSWON, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
+				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
 				+ wbbWins_Credits  + freeStormWins_Credits + lineWins_Credits + ") "  
-				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
 				+ wbbWins_CreditsQ + freeStormWins_CreditsQ + lineWins_CreditsQ + ")";
 		try {
 			if (st == null)
@@ -373,15 +373,15 @@ public class Database {
 			st.setShort(8, result.getNumLines());
 			st.setShort(9, result.getLineBet());
 			st.setDouble(10, result.getFormattedDenomination());
-			st.setDouble(11, result.getFormattedDollarsWon());
-			st.setInt(12, result.getCreditsWon());
-			st.setShort(13, result.getLinesWon());
-			st.setBoolean(14, result.getScatter());
-			st.setBoolean(15, result.getBonusActivated());
-			st.setBoolean(16, result.getBonusSpin());
-			st.setShort(17, result.getFreeSpinsAwarded());
+//			st.setDouble(11, result.getFormattedDollarsWon());
+			st.setInt(11, result.getCreditsWon());
+			st.setShort(12, result.getLinesWon());
+			st.setInt(13, result.getScatter());
+			st.setBoolean(14, result.getBonusActivated());
+			st.setBoolean(15, result.getBonusSpin());
+			st.setShort(16, result.getFreeSpinsAwarded());
 
-			int startingIndex = 18;
+			int startingIndex = 17;
 
 			if (result.getWBBonusCreditWin() != null
 					&& result.getWBBonusCreditWin().size() > 0) {

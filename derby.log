@@ -1,10 +1,16 @@
 ----------------------------------------------------------------
-Tue Mar 05 11:13:07 EST 2013:
-Booting Derby version The Apache Software Foundation - Apache Derby - 10.8.2.2 - (1181258): instance a816c00e-013d-3b53-e726-00000450a128 
-on database directory C:\Users\Kevin\git\UWSimResGen\UWResGenDB10000  with class loader sun.misc.Launcher$AppClassLoader@332b9f79 
+Wed Mar 06 17:12:36 EST 2013:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.8.2.2 - (1181258): instance a816c00e-013d-41c3-61eb-00000472c4c8 
+on database directory D:\Linus_Documents\Git Projects\UWSimResGen\UWResGenDB10000  with class loader sun.misc.Launcher$AppClassLoader@1393537d 
 Loaded from file:/C:/Program%20Files/Java/jdk1.7.0_15/db/lib/derby.jar
 java.vendor=Oracle Corporation
 java.runtime.version=1.7.0_15-b03
-user.dir=C:\Users\Kevin\git\UWSimResGen
+user.dir=D:\Linus_Documents\Git Projects\UWSimResGen
 derby.system.home=null
 Database Class Loader started - derby.database.classpath=''
+----------------------------------------------------------------
+Wed Mar 06 17:12:42 EST 2013: Shutting down Derby engine
+----------------------------------------------------------------
+Wed Mar 06 17:12:42 EST 2013:
+Shutting down instance a816c00e-013d-41c3-61eb-00000472c4c8 on database directory D:\Linus_Documents\Git Projects\UWSimResGen\UWResGenDB10000 with class loader sun.misc.Launcher$AppClassLoader@1393537d 
+----------------------------------------------------------------

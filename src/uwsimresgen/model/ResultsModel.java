@@ -39,7 +39,7 @@ public class ResultsModel {
 	}
 
 	public static enum WinType {
-		BASIC, SCATTER, BONUS, LINESCATTER, WBBONUS, UNKNOWN
+		BASIC, SCATTER, BONUS, BSCATTER, WBBONUS, UNKNOWN
 	}
 	
 	public final int WBBonusPayTable[] = {2, 
@@ -77,6 +77,8 @@ public class ResultsModel {
 	private ArrayList<Payline> paylines = new ArrayList<Payline>();
 	private ArrayList<PaytableEntry> basepaytable = new ArrayList<PaytableEntry>();
 	private ArrayList<PaytableEntry> bonuspaytable = new ArrayList<PaytableEntry>();
+	private ArrayList<Integer> basescatterpaytable = new ArrayList<Integer>(); 
+	private HashMap<String, ArrayList<Integer>> bonuscatterpaytable = new HashMap<String, ArrayList<Integer>>();
 //	private ArrayList<BonusSpinOdd> bonusspinodds = new ArrayList<BonusSpinOdd>();
 	private ArrayList<String> reel1 = new ArrayList<String>();
 	private ArrayList<String> reel2 = new ArrayList<String>();
@@ -280,6 +282,16 @@ public class ResultsModel {
 
 	public String getOutputLogFilePath() {
 		return this.outputLog.getFilePath();
+	}
+	
+	public int numOfSymbol(String str) {
+		int num = 0;
+		
+		for (char c : str.toCharArray()) {
+			if (c != '#') num += 1;
+		}
+		
+		return num;
 	}
 
 	public boolean isCancelled() {
@@ -922,6 +934,9 @@ public class ResultsModel {
 
 	private void readBasePaytable(Document doc) {
 		// Read Base Paytable
+		for (int i = 0; i < 5; i++)
+			this.basescatterpaytable.add(0);
+		
 		NodeList list = doc.getElementsByTagName("basePayTableEntry");
 		for (int i = 0; i < list.getLength(); i++) {
 			Node node = list.item(i);
@@ -951,6 +966,13 @@ public class ResultsModel {
 					pe.setType(type);
 
 					this.basepaytable.add(pe);
+					
+					// update the scatter win paytable 
+					if (type == WinType.SCATTER) {
+						int numofsymbol = this.numOfSymbol(sequence) - 1;
+						
+						this.basescatterpaytable.set(numofsymbol, payout);
+					}
 				}
 			}
 		}
@@ -958,6 +980,19 @@ public class ResultsModel {
 
 	private void readBonusPaytable(Document doc) {
 		// Read Bonus Paytable
+		// Initialize the Bonus Scatter paytable
+		for (Symbol s: this.symbols) {
+			ArrayList<Integer> l = new ArrayList<Integer>();
+			
+			if (!s.getAlias().equals("W")) {
+				for (int i = 0; i < 5; i++) 
+					l.add(0);
+			
+				this.bonuscatterpaytable.put(s.getAlias(), l);
+			}
+		}
+		
+		
 		NodeList list = doc.getElementsByTagName("bonusPayTableEntry");
 		for (int i = 0; i < list.getLength(); i++) {
 			Node node = list.item(i);
@@ -987,6 +1022,13 @@ public class ResultsModel {
 					pe.setType(type);
 
 					this.bonuspaytable.add(pe);
+					
+					if (type != WinType.WBBONUS) {
+						String key = String.valueOf(sequence.charAt(0));
+						int numOfSymbol = this.numOfSymbol(sequence) - 1;
+						
+						this.bonuscatterpaytable.get(key).set(numOfSymbol, payout);
+					}
 				}
 			}
 		}
@@ -1118,14 +1160,14 @@ public class ResultsModel {
 			return WinType.BONUS;
 		} else if (value.toLowerCase().compareTo("basic") == 0) {
 			return WinType.BASIC;
-		} else if (value.toLowerCase().compareTo("linescatter") == 0) {
-			return WinType.LINESCATTER;
+		} else if (value.toLowerCase().compareTo("bscatter") == 0) {
+			return WinType.BSCATTER;
 		} else if (value.toLowerCase().compareTo("wbbonus") == 0) {
 			return WinType.WBBONUS;
 		} else {
 			this.addErrorToLog("PayTableEntry [id:"
 					+ id
-					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'linescatter', 'wbbonus'.");
+					+ "] contains invalid 'type' value! Allowed values: 'basic', 'bonus', 'scatter', 'bscatter', 'wbbonus'.");
 			return WinType.UNKNOWN;
 		}
 	}
@@ -1213,12 +1255,12 @@ public class ResultsModel {
 		private short linebet = 1;
 		private short denomination = 1;
 
-		private int dollarswon = 0;
+//		private int dollarswon = 0;
 		private int creditswon = 0;
 		private long blocknumber = 0;
 		private long recordNumber = 0;
 		private short lineswon = 0;
-		private boolean scatter = false;
+		private int scatter = 0;
 		private boolean bonusactivated = false;
 		private boolean bonusspin = false;
 
@@ -1266,10 +1308,10 @@ public class ResultsModel {
 			numlines = 1;
 			linebet = 1;
 			denomination = 1;
-			dollarswon = 0;
+//			dollarswon = 0;
 			creditswon = 0;
 			lineswon = 0;
-			scatter = false;
+			scatter = 0;
 			bonusactivated = false;
 			bonusspin = false;
 			freespinsawarded = 0;
@@ -1300,11 +1342,11 @@ public class ResultsModel {
 					+ Integer.toString(numlines) + " linebet="
 					+ Integer.toString(linebet) + " denom="
 					+ Double.toString(getFormattedDenomination())
-					+ " dollarswon="
-					+ Double.toString(getFormattedDollarsWon())
+//					+ " dollarswon="
+//					+ Double.toString(getFormattedDollarsWon())
 					+ " creditswon=" + Integer.toString(creditswon)
-					+ " lineswon=" + Integer.toString(lineswon) + " isscatter="
-					+ Boolean.toString(scatter) + " isbonusactivated="
+					+ " lineswon=" + Integer.toString(lineswon) + " scatter="
+					+ Integer.toString(scatter) + " isbonusactivated="
 					+ Boolean.toString(bonusactivated) + " isbonusspin="
 					+ Boolean.toString(bonusspin) + " freespinsawarded="
 					+ Integer.toString(freespinsawarded)
@@ -1323,7 +1365,7 @@ public class ResultsModel {
 				this.freestormwinamounts.set(index, (this.freestormwinamounts.get(index) + value));
 			else
 				System.err
-						.println("AddLineWinAmount: Attempted to add line dollar win past max lines. Index: "
+						.println("AddLineWinAmount: Attempted to add line free storm win past max lines. Index: "
 								+ Integer.toString(index));
 		}
 
@@ -1389,9 +1431,9 @@ public class ResultsModel {
 			this.denomination = value;
 		}
 
-		public void setDollarsWon(int value) {
-			this.dollarswon = value;
-		}
+//		public void setDollarsWon(int value) {
+//			this.dollarswon = value;
+//		}
 
 		public void setCreditsWon(int value) {
 			this.creditswon = value;
@@ -1401,7 +1443,7 @@ public class ResultsModel {
 			this.lineswon = value;
 		}
 
-		public void setScatter(boolean value) {
+		public void setScatter(int value) {
 			this.scatter = value;
 		}
 
@@ -1469,9 +1511,9 @@ public class ResultsModel {
 			return this.denomination;
 		}
 
-		public int getDollarsWon() {
-			return this.dollarswon;
-		}
+//		public int getDollarsWon() {
+//			return this.dollarswon;
+//		}
 
 		public int getCreditsWon() {
 			return this.creditswon;
@@ -1481,7 +1523,7 @@ public class ResultsModel {
 			return this.lineswon;
 		}
 
-		public boolean getScatter() {
+		public int getScatter() {
 			return this.scatter;
 		}
 
@@ -1501,9 +1543,9 @@ public class ResultsModel {
 			return ResultsModel.roundTwoDecimals(this.denomination / 100.0);
 		}
 
-		public double getFormattedDollarsWon() {
-			return ResultsModel.roundTwoDecimals(this.dollarswon / 100.0);
-		}
+//		public double getFormattedDollarsWon() {
+//			return ResultsModel.roundTwoDecimals(this.dollarswon / 100.0);
+//		}
 
 		public int getLineCreditWinAmount(int index) {
 			if (index >= 0 && index < this.linecreditwinamounts.size()) {
@@ -1854,6 +1896,16 @@ public class ResultsModel {
 			r5stop = 0;
 		}
 		
+		private ArrayList<String> convertSymbolSet() {
+			ArrayList<String> symbollist = new ArrayList<String>();
+			
+			for (String[] row : this.symbolset) {
+				for (String symbol : row) {
+					symbollist.add(symbol);
+				}
+			}
+			return symbollist;
+		}
 		/**
 		 * Method used to simulate one spin.
 		 * 
@@ -2001,6 +2053,21 @@ public class ResultsModel {
 		private void calculatePayout() {
 			String winsequence = "";
 			Payline p = null;
+			
+			// Check if there's a scatter win in base mode
+			if (!this.model.bonusactive) {
+				int num = findScatterSymbols("S");
+				
+				if (num > 1 && num <= 5) {
+					int scatterwin = this.model.basescatterpaytable.get(num - 1);
+					scatterwin *= currblock.linebet * currblock.numlines;
+					r.setScatter(scatterwin);
+					r.setCreditsWon(r.getCreditsWon() + scatterwin);
+				}
+			} else { //TODO: scatter win in bonus
+			
+			}
+			
 			for (int i = 0; i < this.model.currblock.numlines
 					&& i < this.model.paylines.size(); i++) {
 				p = this.model.paylines.get(i);
@@ -2018,16 +2085,29 @@ public class ResultsModel {
 				}
 			}
 		}
+		
+		private int findScatterSymbols(String symbol) {
+			int numofsymbols = 0;
+			ArrayList<String> symbollist = this.convertSymbolSet();
+			
+			for (String s : symbollist) {
+				if (s.equalsIgnoreCase(symbol)) 
+					numofsymbols += 1;
+			}
+			
+			return numofsymbols;
+		}
 
 		private void calculatePayoutBase(String winsequence, int line) {
 			SimpleResult sr = new SimpleResult();
 			PaytableEntry pe;
-			// for (PaytableEntry pe : this.model.basepaytable) {
-			// calculateSimpleResult(pe, winsequence, sr);
-			// }
+			
 			for (int i = 0; i < this.model.basepaytable.size(); i++) {
 				pe = this.model.basepaytable.get(i);
-				calculateSimpleResult(pe, winsequence, sr);
+				
+				if (pe.getType() != WinType.SCATTER) {
+					calculateSimpleResult(pe, winsequence, sr);
+				}
 			}
 
 			updateResult(sr, line);
@@ -2052,8 +2132,8 @@ public class ResultsModel {
 		// This method updates the result of one spin when each payline/played line is checked
 		// TODO: do major damage to this one!!!
 		private void updateResult(SimpleResult sr, int line) {
-			int dollarswon = ((sr.bestPayout + sr.bestScatterPayout) * currblock.denomination);
-			int creditswon = (sr.bestPayout + sr.bestScatterPayout);
+//			int dollarswon = ((sr.bestPayout) * currblock.denomination);
+			int creditswon = (sr.bestPayout);
 
 			// dollarswon = ResultsModel.roundTwoDecimals(dollarswon);
 			// creditswon = ResultsModel.roundTwoDecimals(creditswon);
@@ -2070,9 +2150,9 @@ public class ResultsModel {
 					r.setFreeSpinsAwarded(getAwardedSpins(sr.bestFreeStormPayout));
 				} 
 			}
-			// if the simpleResult has a Scatter win
-			if (sr.bestScatterPayout > 0)
-				r.setScatter(true);
+//			// if the simpleResult has a Scatter win
+//			if (sr.bestScatterPayout > 0)
+//				r.setScatter(true);
 			
 			// if the simpleResult has a Weather Beacon Bonus win
 			if (sr.wbBonusMultiplier > 0 && line < 3) {
@@ -2083,15 +2163,14 @@ public class ResultsModel {
 			}
 				
 			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
-			if (sr.bestPayout > 0 || sr.bestScatterPayout > 0
-					|| sr.activatedBonus || sr.wbBonusMultiplier > 0)
+			if (sr.bestPayout > 0 || sr.activatedBonus || sr.wbBonusMultiplier > 0)
 				r.incrementLinesWon();
 			
 			// add the win to a particular line.
 			r.addLineCreditWinAmount(line, creditswon);
 			
 			// update the wins of the current spin.
-			r.setDollarsWon(r.getDollarsWon() + dollarswon);
+//			r.setDollarsWon(r.getDollarsWon() + dollarswon);
 			r.setCreditsWon(r.getCreditsWon() + creditswon);
 		}
 		
@@ -2102,8 +2181,37 @@ public class ResultsModel {
 			String sequence = pe.getSequence();
 			int slice = random.nextInt(25);
 			
-			//TODO: need new ways of checking wins in free storm scatter bonus 
+			//TODO: need new ways of checking wins in free storm scatter bonus
 			// check if the win sequence matches the paytable sequence
+			match = checkSequence(winsequence, sequence);
+
+			// if it's a match, determine the type of win and update SimpleResult accordingly.
+			if (match) {
+				if (pe.getType() == WinType.BASIC) {
+					if (pe.getPayout() >= simpleResult.bestPayout) {
+						simpleResult.bestPayout = pe.getPayout();
+					}
+//				} else if (pe.getType() == WinType.SCATTER) {
+//					if (pe.getPayout() >= simpleResult.bestScatterPayout) {
+//						simpleResult.bestScatterPayout = pe.getPayout();
+//					}
+					
+				} else if (pe.getType() == WinType.BONUS) {
+					simpleResult.activatedBonus = true;
+					if (pe.getPayout() >= simpleResult.bestFreeStormPayout) {
+						simpleResult.bestFreeStormPayout = pe.getPayout();
+					}
+				} else if (pe.getType() == WinType.WBBONUS) {
+					simpleResult.wbBonusMultiplier = lookUpWBBonusPaytable(slice);	
+				}
+			}
+			
+			//if not a match, SimpleResult will have every win amount set to defaults as 0s.
+		}
+
+		private boolean checkSequence(String winsequence, String sequence) {
+			boolean match = true;
+			
 			for (int i = 0; i < sequence.length(); i++) {
 				if (i >= winsequence.length()) {
 					match = false;
@@ -2117,30 +2225,7 @@ public class ResultsModel {
 					}
 				}
 			}
-
-			// if it's a match, determine the type of win and update SimpleResult accordingly.
-			if (match) {
-				if (pe.getType() == WinType.BASIC) {
-					if (pe.getPayout() >= simpleResult.bestPayout) {
-						simpleResult.bestPayout = pe.getPayout();
-					}
-				} else if (pe.getType() == WinType.SCATTER) {
-					if (pe.getPayout() >= simpleResult.bestScatterPayout) {
-						simpleResult.bestScatterPayout = pe.getPayout();
-					}
-					
-				//TODO: Do some damage to this one here!!!!
-				} else if (pe.getType() == WinType.BONUS) {
-					simpleResult.activatedBonus = true;
-					if (pe.getPayout() >= simpleResult.bestFreeStormPayout) {
-						simpleResult.bestFreeStormPayout = pe.getPayout();
-					}
-				} else if (pe.getType() == WinType.WBBONUS) {
-					simpleResult.wbBonusMultiplier = lookUpWBBonusPaytable(slice);	
-				}
-			}
-			
-			//if not a match, SimpleResult will have every win amount set to defaults as 0s.
+			return match;
 		}
 		
 		// Used to determine the amount of free spins awarded.

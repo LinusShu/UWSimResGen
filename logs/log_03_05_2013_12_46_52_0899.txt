@@ -1,0 +1,15 @@
+UWSimResGen: Log File
+LAUNCH NEW SESSION:
+Set Blocks DB Table Name: SimResults_Blocks_03_05_2013_12_47_09_0591
+Set Results DB Table Name: SimResults_SpinResults_03_05_2013_12_47_09_0591
+Set Symbols DB Table Name: SimResults_Symbols_03_05_2013_12_47_09_0591
+Set Paylines DB Table Name: SimResults_Paylines_03_05_2013_12_47_09_0591
+Set Base Paytable DB Table Name: SimResults_BasePaytable_03_05_2013_12_47_09_0591
+Set Bonus Paytable DB Table Name: SimResults_BonusPaytable_03_05_2013_12_47_09_0591
+Set Reel Mappings DB Table Name: SimResults_ReelMappings_03_05_2013_12_47_09_0591
+Finished reading configuration file. Errors: 0, Warnings: 0
+Finished reading blocks file. Errors: 0, Warnings: 0
+Mode: Do Blocks.
+START PRODUCTION
+Total Spins: 10000
+END PRODUCTION
