@@ -39,7 +39,7 @@
 		<symbol id="12" type="bonus"    alias="Z" />
 	</symbols>
 	<payLines>
-		<!-- payLine Info
+		<!-- payLine Info  - DO NOT MODIFY
 			The lines of the slot machine
 			AV for number: [integer between 0 - 19] - DO NOT MODIFY
 			AV for r1 to r5: [top|mid|bot] - the winning position on the reel (top, middle, bottom)
