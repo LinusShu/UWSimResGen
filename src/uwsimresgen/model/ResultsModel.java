@@ -221,6 +221,10 @@ public class ResultsModel {
 		return this.totalspins;
 	}
 
+	public int getBonusPayout(String key, int index) {
+		return this.bonuscatterpaytable.get(key).get(index);
+	}
+	
 	public File getConfigFile() {
 		return this.configfile;
 	}
@@ -416,7 +420,8 @@ public class ResultsModel {
 	private void produce() {
 		Thread t = new Thread() {
 			public void run() {
-				int potential_freespin = 0;
+				int total_freespin = 0;
+				boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 				
 				ResultsModel.this.outputLog
 						.outputStringAndNewLine("START PRODUCTION");
@@ -540,7 +545,7 @@ public class ResultsModel {
 								if (r != null) {
 
 									// ResultsModel.this.resultqueue.put(r);
-
+									
 									// ResultsModel.this.results.add(r);
 
 									r.setRecordNumber(ResultsModel.this
@@ -552,17 +557,36 @@ public class ResultsModel {
 											.getSpinResultsDBTableName(), r);
 									ResultsModel.this.incrementCurrSpin();
 									
-									// check if the number of free spins awarded exceeds the allowed
-									potential_freespin = r.freespinsawarded + ResultsModel.this.freespins;
-									if (potential_freespin > 200) {
-										ResultsModel.this.addFreeSpins(200 - ResultsModel.this.freespins);
-									} else {
-										ResultsModel.this.addFreeSpins(r.freespinsawarded);
+									// If there are free spins awarded
+									if (r.freespinsawarded > 0) { 
+										total_freespin += r.freespinsawarded;
+									
+										// Check if the number of free spins awarded exceeds the allowed
+										if (total_freespin > 200) {
+											int extras = 200 - (total_freespin - r.freespinsawarded);
+											ResultsModel.this.addFreeSpins(extras);
+										} else {
+											ResultsModel.this.addFreeSpins(r.freespinsawarded);
+										}
+									}
+									
+									// Add extra spins to total spin when get free spins in Generate-all-results mode
+									if (orign_mode && r.bonusactivated) {
+										ts += r.freespinsawarded;
+										ResultsModel.this.setTotalSpins(ts);
+										ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
+										.addNumSpins(r.freespinsawarded);
+										ResultsModel.this.simulator.setSeqStops(false);
 									}
 
 									if (ResultsModel.this.bonusactive) {
 										ResultsModel.this.decrementFreeSpins();
+									} else if (orign_mode != ResultsModel.this.simulator.getSeqStops()
+											&& !r.bonusactivated) {
+											ResultsModel.this.simulator.setSeqStops(orign_mode);
+											total_freespin = 0;
 									}
+									
 								} else {
 									ResultsModel.this.incrementFailedSpins();
 									ResultsModel.this.outputLog
@@ -611,53 +635,53 @@ public class ResultsModel {
 
 	/* CONSUMER */
 	// NOT USED!!!!
-	private void consume() {
-		Thread t = new Thread() {
-			public void run() {
-
-				int timeouts = 0;
-				int timeoutlimit = 3;
-
-				try {
-					Database.createConnection();
-					while (!ResultsModel.this.isCancelled()
-							&& ResultsModel.this.isRunning()) {
-
-						Result r = resultqueue.take();
-						if (!r.getNullObject()) {
-							timeouts = 0;
-							Database.insertIntoTable(ResultsModel.this
-									.getSpinResultsDBTableName(), r);
-							ResultsModel.this.incrementConsumed();
-						} else {
-							break;
-						}
-					}
-
-					ResultsModel.this.stop();
-
-				} catch (Exception e) {
-					ResultsModel.this.cancel();
-					ResultsModel.this.outputLog
-							.outputStringAndNewLine("ERROR: Consumption thread caught an exception. Message="
-									+ e.getMessage());
-					e.printStackTrace();
-				} finally {
-					try {
-						Database.shutdownConnection();
-					} catch (SQLException e) {
-						ResultsModel.this.outputLog
-								.outputStringAndNewLine("ERROR: Closing database connection. Message="
-										+ e.getMessage());
-						e.printStackTrace();
-					}
-				}
-			}
-		};
-
-		t.setPriority(Thread.MAX_PRIORITY);
-		t.start();
-	}
+//	private void consume() {
+//		Thread t = new Thread() {
+//			public void run() {
+//
+//				int timeouts = 0;
+//				int timeoutlimit = 3;
+//
+//				try {
+//					Database.createConnection();
+//					while (!ResultsModel.this.isCancelled()
+//							&& ResultsModel.this.isRunning()) {
+//
+//						Result r = resultqueue.take();
+//						if (!r.getNullObject()) {
+//							timeouts = 0;
+//							Database.insertIntoTable(ResultsModel.this
+//									.getSpinResultsDBTableName(), r);
+//							ResultsModel.this.incrementConsumed();
+//						} else {
+//							break;
+//						}
+//					}
+//
+//					ResultsModel.this.stop();
+//
+//				} catch (Exception e) {
+//					ResultsModel.this.cancel();
+//					ResultsModel.this.outputLog
+//							.outputStringAndNewLine("ERROR: Consumption thread caught an exception. Message="
+//									+ e.getMessage());
+//					e.printStackTrace();
+//				} finally {
+//					try {
+//						Database.shutdownConnection();
+//					} catch (SQLException e) {
+//						ResultsModel.this.outputLog
+//								.outputStringAndNewLine("ERROR: Closing database connection. Message="
+//										+ e.getMessage());
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//		};
+//
+//		t.setPriority(Thread.MAX_PRIORITY);
+//		t.start();
+//	}
 
 	protected void generateDBTableName() {
 		this.setTableSuffix();
@@ -714,10 +738,10 @@ public class ResultsModel {
 		this.UpdateViews();
 	}
 
-	protected void incrementConsumed() {
-		this.currconsumedspin++;
-		this.UpdateViews();
-	}
+//	protected void incrementConsumed() {
+//		this.currconsumedspin++;
+//		this.UpdateViews();
+//	}
 
 	/* GET CONFIGURATION */
 
@@ -1444,7 +1468,7 @@ public class ResultsModel {
 		}
 
 		public void setScatter(int value) {
-			this.scatter = value;
+			this.scatter += value;
 		}
 
 		public void setBonusActivated(boolean value) {
@@ -1639,6 +1663,10 @@ public class ResultsModel {
 		private long blockNumber = 0;
 
 		public Block() {
+		}
+
+		public void addNumSpins(int value) {
+			this.numspins += value;
 		}
 
 		public boolean incrementCurrSpin() {
@@ -1966,11 +1994,12 @@ public class ResultsModel {
 				/* populate symbol set */
 
 // 				TEST: get a wbbonus on top line				
-//				reelstop1 = (short)5;
-//				reelstop2 = (short)16;
-//				reelstop3 = (short)1;
-//				reelstop4 = (short)2;
-//				reelstop5 = (short)15;
+//				reelstop1 = (short)22;
+//				reelstop2 = (short)6;
+//				reelstop3 = (short)5;
+//				reelstop4 = (short)22;
+//				reelstop5 = (short)27;
+//				this.model.bonusactive = true;
 
 				populateSymbolSetColumn(reelstop1, REEL_ONE, this.model.reel1);
 				populateSymbolSetColumn(reelstop2, REEL_TWO, this.model.reel2);
@@ -2014,8 +2043,8 @@ public class ResultsModel {
 		}
 
 		private void reset() {
-			clearSymbolSet();
 			// r.reset();
+			clearSymbolSet();
 		}
 
 		private void clearSymbolSet() {
@@ -2054,19 +2083,7 @@ public class ResultsModel {
 			String winsequence = "";
 			Payline p = null;
 			
-			// Check if there's a scatter win in base mode
-			if (!this.model.bonusactive) {
-				int num = findScatterSymbols("S");
-				
-				if (num > 1 && num <= 5) {
-					int scatterwin = this.model.basescatterpaytable.get(num - 1);
-					scatterwin *= currblock.linebet * currblock.numlines;
-					r.setScatter(scatterwin);
-					r.setCreditsWon(r.getCreditsWon() + scatterwin);
-				}
-			} else { //TODO: scatter win in bonus
-			
-			}
+			calculateScatterPayout();
 			
 			for (int i = 0; i < this.model.currblock.numlines
 					&& i < this.model.paylines.size(); i++) {
@@ -2082,6 +2099,60 @@ public class ResultsModel {
 					calculatePayoutBase(winsequence, i);
 				} else {
 					calculatePayoutBonus(winsequence, i);
+				}
+			}
+		}
+
+		private void calculateScatterPayout() {
+			// Check if there's a scatter win in base mode
+			if (!this.model.bonusactive) {
+				int num = findScatterSymbols("S");
+				
+				if (num > 1 && num <= 5) {
+					int scatterwin = this.model.basescatterpaytable.get(num - 1);
+					scatterwin *= currblock.linebet * currblock.numlines;
+					r.setScatter(scatterwin);
+					r.setCreditsWon(r.getCreditsWon() + scatterwin);
+				}
+				
+			} else { 
+				for (Symbol s : this.model.symbols) {
+					int num = 0;
+					int scatterwin = 0;
+					
+					if (!s.getType().equals(ResultsModel.SymbolType.WBBONUS)) {
+						num = findScatterSymbols(s.getAlias());
+						String type = s.getType().toString();
+						if (num > 0) {
+							switch(type) {
+							// Bonus Scatter Symbol Win
+							case "SCATTER":
+								scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
+								scatterwin *= currblock.linebet * r.maxlines;
+								r.setScatter(scatterwin);
+								r.setCreditsWon(r.getCreditsWon() + scatterwin);
+								break;
+						
+							// Bonus Free Storm Scatter Win
+							case "BONUS":
+								if (num > 2) {
+									scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
+									short freespins = this.getAwardedSpins(scatterwin);
+									r.setCreditsWon(r.getCreditsWon() + scatterwin);
+									r.setFreeSpinsAwarded(freespins);
+									r.setBonusActivated(true);
+								}
+								break;
+							// Bonus Scatter Win of all the other symbols
+							default:
+								scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
+								//r.setScatter(scatterwin);
+								r.setCreditsWon(r.getCreditsWon() + scatterwin);
+								break;
+							}
+						}
+					}
+					
 				}
 			}
 		}
@@ -2122,7 +2193,9 @@ public class ResultsModel {
 
 			for (int i = 0; i < this.model.bonuspaytable.size(); i++) {
 				pe = this.model.bonuspaytable.get(i);
-				calculateSimpleResult(pe, winsequence, sr);
+				// Only calculate Weather Beacon Bonus as in base mode
+				if (pe.getType() == WinType.WBBONUS)
+					calculateSimpleResult(pe, winsequence, sr);
 			}
 
 			r.setBonusSpin(true);
@@ -2130,7 +2203,6 @@ public class ResultsModel {
 		}
 
 		// This method updates the result of one spin when each payline/played line is checked
-		// TODO: do major damage to this one!!!
 		private void updateResult(SimpleResult sr, int line) {
 //			int dollarswon = ((sr.bestPayout) * currblock.denomination);
 			int creditswon = (sr.bestPayout);
@@ -2181,7 +2253,6 @@ public class ResultsModel {
 			String sequence = pe.getSequence();
 			int slice = random.nextInt(25);
 			
-			//TODO: need new ways of checking wins in free storm scatter bonus
 			// check if the win sequence matches the paytable sequence
 			match = checkSequence(winsequence, sequence);
 
@@ -2196,7 +2267,7 @@ public class ResultsModel {
 //						simpleResult.bestScatterPayout = pe.getPayout();
 //					}
 					
-				} else if (pe.getType() == WinType.BONUS) {
+				} else if (pe.getType() == WinType.BONUS) { //NOTE: only handles base mode FSSBonus
 					simpleResult.activatedBonus = true;
 					if (pe.getPayout() >= simpleResult.bestFreeStormPayout) {
 						simpleResult.bestFreeStormPayout = pe.getPayout();
@@ -2230,9 +2301,7 @@ public class ResultsModel {
 		
 		// Used to determine the amount of free spins awarded.
 		private short getAwardedSpins(int payout) {
-			short spinsawarded = 0;
-			spinsawarded = this.model.freespin_lookuptable.get(payout).shortValue();
-			return spinsawarded;
+			return this.model.freespin_lookuptable.get(payout).shortValue();
 		}
 		
 		private int getWBBonusCredit(SimpleResult sr, Result r) {
