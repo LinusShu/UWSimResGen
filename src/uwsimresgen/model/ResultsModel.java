@@ -1940,7 +1940,6 @@ public class ResultsModel {
 				bot = reel.get(stop + 1);
 			}
 			
-			
 			symbolset[reelnum][REEL_TOP] = top;
 			symbolset[reelnum][REEL_MID] = mid;
 			symbolset[reelnum][REEL_BOT] = bot;
@@ -2025,6 +2024,18 @@ public class ResultsModel {
 			}
 		}
 		
+		private int findScatterSymbols(String symbol) {
+			int numofsymbols = 0;
+			ArrayList<String> symbollist = this.convertSymbolSet();
+			
+			for (String s : symbollist) {
+				if (s.equalsIgnoreCase(symbol)) 
+					numofsymbols += 1;
+			}
+			
+			return numofsymbols;
+		}
+		
 		private void calculateWBBonusPayout() {
 			Payline p = null;
 			String winsequence = "";
@@ -2054,18 +2065,6 @@ public class ResultsModel {
 				winsequence = "";
 			}
 		}
-		
-		private int findScatterSymbols(String symbol) {
-			int numofsymbols = 0;
-			ArrayList<String> symbollist = this.convertSymbolSet();
-			
-			for (String s : symbollist) {
-				if (s.equalsIgnoreCase(symbol)) 
-					numofsymbols += 1;
-			}
-			
-			return numofsymbols;
-		}
 
 		private void calculatePayoutBase(String winsequence, int line) {
 			SimpleResult sr = new SimpleResult();
@@ -2083,18 +2082,18 @@ public class ResultsModel {
 		}
 
 		private void calculatePayoutBonus(String winsequence, int line) {
-			SimpleResult sr = new SimpleResult();
-			PaytableEntry pe;
-			
-			for (int i = 0; i < this.model.bonuspaytable.size(); i++) {
-				pe = this.model.bonuspaytable.get(i);
-				// Only calculate Weather Beacon Bonus as in base mode
-				if (pe.getType() == WinType.WBBONUS)
-					calculateSimpleResult(pe, winsequence, sr);
-			}
+//			SimpleResult sr = new SimpleResult();
+//			PaytableEntry pe;
+//			
+//			for (int i = 0; i < this.model.bonuspaytable.size(); i++) {
+//				pe = this.model.bonuspaytable.get(i);
+//				// Only calculate Weather Beacon Bonus as in base mode
+//				if (pe.getType() == WinType.WBBONUS)
+//					calculateSimpleResult(pe, winsequence, sr);
+//			}
 
 			r.setBonusSpin(true);
-			updateResult(sr, line);
+//			updateResult(sr, line);
 		}
 
 		// This method updates the result of one spin when each payline/played line is checked
@@ -2123,7 +2122,7 @@ public class ResultsModel {
 //			}
 				
 			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
-			if (sr.bestPayout > 0 || sr.activatedBonus && !sr.wbBonusWon)
+			if ((sr.bestPayout > 0 || sr.activatedBonus) && !sr.wbBonusWon)
 				r.incrementLinesWon();
 				
 			// add the win to a particular line.
