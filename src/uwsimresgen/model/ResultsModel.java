@@ -32,6 +32,8 @@ public class ResultsModel {
 	public static String SYMBOLS_TABLE_NAME = "Symbols";
 	public static String BLOCKS_TABLE_NAME = "Blocks";
 	public static String PAYLINES_TABLE_NAME = "Paylines";
+	public static String BASEPAR_TABLE_NAME = "BasePARTable";
+	public static String BONUSPAR_TABLE_NAME = "BonusPARTable";
 
 	public static enum SymbolType {
 		BASIC, SCATTER, BONUS, WBBONUS, UNKNOWN
