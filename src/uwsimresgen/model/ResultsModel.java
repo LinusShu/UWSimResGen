@@ -281,6 +281,14 @@ public class ResultsModel {
 	public String getReelMappingsDBTableName() {
 		return this.buildDBTableName(ResultsModel.REELMAPPINGS_TABLE_NAME);
 	}
+	
+	public String getBasePARDBTableName() {
+		return this.buildDBTableName(ResultsModel.BASEPAR_TABLE_NAME);
+	}
+	
+	public String getBonusPARDBTableName() {
+		return this.buildDBTableName(ResultsModel.BONUSPAR_TABLE_NAME);
+	}
 
 	public String getOutputLogFilePath() {
 		return this.outputLog.getFilePath();
@@ -525,6 +533,12 @@ public class ResultsModel {
 							if (!ResultsModel.this.paused) {
 
 								ResultsModel.this.checkBonusState();
+								// Reset total_freespin and game mode
+								if (! ResultsModel.this.bonusactive) {
+									total_freespin = 0;
+									ResultsModel.this.simulator.setSeqStops(orign_mode);
+								}
+								
 								Result r = ResultsModel.this.simulator
 										.simulateSpin();
 								if (r != null) {
@@ -540,7 +554,6 @@ public class ResultsModel {
 											.getBlockNumber());
 									Database.insertIntoTable(ResultsModel.this
 											.getSpinResultsDBTableName(), r);
-									ResultsModel.this.incrementCurrSpin();
 									
 									// If there are free spins awarded
 									if (r.freespinsawarded > 0) { 
@@ -555,7 +568,7 @@ public class ResultsModel {
 										}
 									}
 									
-									// Add extra spins to total spin when get free spins in Generate-all-results mode
+									// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
 									if (orign_mode && r.bonusactivated) {
 										ts += r.freespinsawarded;
 										ResultsModel.this.setTotalSpins(ts);
@@ -566,11 +579,11 @@ public class ResultsModel {
 
 									if (ResultsModel.this.bonusactive) {
 										ResultsModel.this.decrementFreeSpins();
-									} else if (orign_mode != ResultsModel.this.simulator.getSeqStops()
-											&& !r.bonusactivated) {
-											ResultsModel.this.simulator.setSeqStops(orign_mode);
-											total_freespin = 0;
+//									} else if (orign_mode != ResultsModel.this.simulator.getSeqStops()
+//											&& !r.bonusactivated) {
+//											
 									}
+									ResultsModel.this.incrementCurrSpin();
 									
 								} else {
 									ResultsModel.this.incrementFailedSpins();
@@ -1954,22 +1967,23 @@ public class ResultsModel {
 			calculateScatterPayout();
 			calculateWBBonusPayout();
 			
-			for (int i = 0; i < this.model.currblock.numlines
-					&& i < this.model.paylines.size(); i++) {
-				p = this.model.paylines.get(i);
-				winsequence = "";
-				winsequence += symbolset[REEL_ONE][p.getR1()];
-				winsequence += symbolset[REEL_TWO][p.getR2()];
-				winsequence += symbolset[REEL_THREE][p.getR3()];
-				winsequence += symbolset[REEL_FOUR][p.getR4()];
-				winsequence += symbolset[REEL_FIVE][p.getR5()];
+			if (!this.model.bonusactive) {
+				for (int i = 0; i < this.model.currblock.numlines
+						&& i < this.model.paylines.size(); i++) {
+					p = this.model.paylines.get(i);
+					winsequence = "";
+					winsequence += symbolset[REEL_ONE][p.getR1()];
+					winsequence += symbolset[REEL_TWO][p.getR2()];
+					winsequence += symbolset[REEL_THREE][p.getR3()];
+					winsequence += symbolset[REEL_FOUR][p.getR4()];
+					winsequence += symbolset[REEL_FIVE][p.getR5()];
 
-				if (!this.model.bonusactive) {
 					calculatePayoutBase(winsequence, i);
-				} else {
-					calculatePayoutBonus(winsequence, i);
 				}
+			} else {
+					r.setBonusSpin(true);
 			}
+			
 		}
 
 		private void calculateScatterPayout() {
@@ -2041,6 +2055,7 @@ public class ResultsModel {
 		private void calculateWBBonusPayout() {
 			Payline p = null;
 			String winsequence = "";
+			boolean match;
 			
 			// WARNING: Only the first 3 paylines where WBBonus could occur are checked.
 			//		 Hence, changing the order of the paylines defined in xml file will cause the
@@ -2054,7 +2069,8 @@ public class ResultsModel {
 				winsequence += symbolset[REEL_FOUR][p.getR4()];
 				winsequence += symbolset[REEL_FIVE][p.getR5()];
 				
-				if (checkSequence(winsequence, this.model.wbbonus_sequence)) {
+				match = checkSequence(winsequence, this.model.wbbonus_sequence);
+				if (match) {
 					int slice = random.nextInt(25);
 					int wbbmultiplier = lookUpWBBonusPaytable(slice);
 					int creditswon = getWBBonusCredit(wbbmultiplier);
@@ -2083,22 +2099,7 @@ public class ResultsModel {
 			updateResult(sr, line);
 		}
 
-		private void calculatePayoutBonus(String winsequence, int line) {
-//			SimpleResult sr = new SimpleResult();
-//			PaytableEntry pe;
-//			
-//			for (int i = 0; i < this.model.bonuspaytable.size(); i++) {
-//				pe = this.model.bonuspaytable.get(i);
-//				// Only calculate Weather Beacon Bonus as in base mode
-//				if (pe.getType() == WinType.WBBONUS)
-//					calculateSimpleResult(pe, winsequence, sr);
-//			}
-
-			r.setBonusSpin(true);
-//			updateResult(sr, line);
-		}
-
-		// This method updates the result of one spin when each payline/played line is checked
+		// This method updates the result of one spin when each pay/played line is checked
 		private void updateResult(SimpleResult sr, int line) {
 			int creditswon = (sr.bestPayout);
 			
@@ -2111,18 +2112,7 @@ public class ResultsModel {
 					r.setFreeSpinsAwarded(getAwardedSpins(sr.bestFreeStormPayout));
 				} 
 			}
-//			// if the simpleResult has a Scatter win
-//			if (sr.bestScatterPayout > 0)
-//				r.setScatter(true);
 			
-//			 if the simpleResult has a Weather Beacon Bonus win
-//			if (sr.wbBonusMultiplier > 0 && line < 3) {
-//				int wbcreditswon = this.getWBBonusCredit(sr, r);
-//				
-//				creditswon += wbcreditswon;
-//				r.addWBBonusCreditWin(line, wbcreditswon);
-//			}
-				
 			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
 			if ((sr.bestPayout > 0 || sr.activatedBonus) && !sr.wbBonusWon)
 				r.incrementLinesWon();
@@ -2150,22 +2140,19 @@ public class ResultsModel {
 					if (pe.getPayout() >= simpleResult.bestPayout) {
 						simpleResult.bestPayout = pe.getPayout();
 					}
-//				} else if (pe.getType() == WinType.SCATTER) {
-//					if (pe.getPayout() >= simpleResult.bestScatterPayout) {
-//						simpleResult.bestScatterPayout = pe.getPayout();
-//					}
 					
 				} else if (pe.getType() == WinType.BONUS) { 
 					simpleResult.activatedBonus = true;
 					if (pe.getPayout() >= simpleResult.bestFreeStormPayout) {
 						simpleResult.bestFreeStormPayout = pe.getPayout();
 					}
+					
 				} else if (pe.getType() == WinType.WBBONUS) {
 					simpleResult.wbBonusWon = true;
 				}
 			}
 			
-			//if not a match, SimpleResult will have every win amount set to defaults as 0s.
+			//if not a match, SimpleResult will have every win amount set to defaults as 0s for next played line.
 		}
 
 		private boolean checkSequence(String winsequence, String sequence) {
