@@ -7,7 +7,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
@@ -15,6 +19,7 @@ import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
 import uwsimresgen.model.ResultsModel.Result;
 import uwsimresgen.model.ResultsModel.Symbol;
+import uwsimresgen.model.ResultsModel.WinType;
 
 public class Database {
 
@@ -135,25 +140,48 @@ public class Database {
 					+ "WINCODE varchar(10) NOT NULL, "
 					+ "SEQUENCE varchar(10) NOT NULL, "
 					+ "PAYOUT integer NOT NULL, "
-					+ "TYPE varchar(10) NOT NULL)";
+					+ "TYPE varchar(10) NOT NULL, "
+					+ "HITS bigint NOT NULL)";
 			Database.createTable(tableName, query);
 		}
 
 		// Otherwise, add it to DB.
 		String query = "insert into " + tableName
-				+ "(ENTRYID,WINCODE,SEQUENCE,PAYOUT,TYPE) "
-				+ "values(?,?,?,?,?)";
+				+ "(ENTRYID,WINCODE,SEQUENCE,PAYOUT,TYPE,HITS) "
+				+ "values(?,?,?,?,?,?)";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
-			st.setLong(1, paytableEntry.getEntryID());
-			st.setString(2, paytableEntry.getWinCode());
-			st.setString(3, paytableEntry.getSequence());
-			st.setInt(4, paytableEntry.getPayout());
-			st.setString(5, paytableEntry.getType().toString());
+			
+			if (paytableEntry.getType() == WinType.WBBONUS) {
+				int[] wbbonuspay = {2, 5, 8, 10, 15, 25};
+				
+				for (int i=0; i < wbbonuspay.length; i++) {
+					//String sequence = paytableEntry.getSequence()
+					//		+ wbbonuspay[i];
+					
+					st.setLong(1, paytableEntry.getEntryID());
+					st.setString(2, paytableEntry.getWinCode());
+					st.setString(3, paytableEntry.getSequence());
+					st.setInt(4, wbbonuspay[i]);
+					st.setString(5, paytableEntry.getType().toString());
+					st.setLong(6, 0);
+					
+					st.addBatch();
+					batchRequests++;
+				}
+			} else {
+				st.setLong(1, paytableEntry.getEntryID());
+				st.setString(2, paytableEntry.getWinCode());
+				st.setString(3, paytableEntry.getSequence());
+				st.setInt(4, paytableEntry.getPayout());
+				st.setString(5, paytableEntry.getType().toString());
+				st.setLong(6, 0);
+				
+				st.addBatch();
+				batchRequests++;
+			}
 
-			st.addBatch();
-			batchRequests++;
 			if (batchRequests >= 1000) {
 				batchRequests = 0;
 				st.executeBatch();
@@ -310,7 +338,6 @@ public class Database {
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "LINEBET smallint NOT NULL, "
 					+ "DENOMINATION float NOT NULL, "
-//					+ "DOLLARSWON float NOT NULL, "
 					+ "CREDITSWON integer NOT NULL, "
 					+ "LINESWON smallint NOT NULL, "
 					+ "SCATTER integer NOT NULL, "
@@ -373,7 +400,6 @@ public class Database {
 			st.setShort(8, result.getNumLines());
 			st.setShort(9, result.getLineBet());
 			st.setDouble(10, result.getFormattedDenomination());
-//			st.setDouble(11, result.getFormattedDollarsWon());
 			st.setInt(11, result.getCreditsWon());
 			st.setShort(12, result.getLinesWon());
 			st.setInt(13, result.getScatter());
@@ -418,6 +444,38 @@ public class Database {
 			}
 		} catch (SQLException e) {
 			throw e;
+		}
+	}
+	
+	//TODO: implement the method to update hits in the base/bonus-paytable table
+	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
+			throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		String query = "update " + tableName 
+				+ " set HITS = ? "
+				+ "where SEQUENCE = ? "
+				+ "and PAYOUT = ?";
+		
+		Iterator<Map.Entry<SimpleEntry<String, Integer>, Integer>> entries = hittable.entrySet().iterator();
+		while (entries.hasNext()) { 
+				Map.Entry<SimpleEntry<String, Integer>, Integer> entry = entries.next();
+			try {
+				conn.setAutoCommit(false);
+				st = conn.prepareStatement(query);
+				st.setLong(1, entry.getValue());
+				st.setString(2, entry.getKey().getKey());
+				st.setInt(3, entry.getKey().getValue());
+//				st.executeUpdate();
+				st.addBatch();
+				st.executeBatch();
+				conn.commit();
+			
+			} catch (SQLException e) {
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+			} 
 		}
 	}
 
