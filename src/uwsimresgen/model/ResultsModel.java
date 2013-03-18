@@ -99,6 +99,8 @@ public class ResultsModel {
 	private Block currblock = null;
 	private int currblockindex = 0;
 	private boolean bonusactive = false;
+	private int wins = 0;
+	private int losses = 0;
 	private int currspin = 0;
 	private int currconsumedspin = 0;
 	private int failedspins = 0;
@@ -216,6 +218,14 @@ public class ResultsModel {
 		return this.currspin;
 	}
 
+	public int getWins() {
+		return this.wins;
+	}
+	
+	public int getLosses() {
+		return this.losses;
+	}
+	
 	public int getCurrConsumedSpin() {
 		return this.currconsumedspin;
 	}
@@ -295,6 +305,62 @@ public class ResultsModel {
 		}
 		
 		return num;
+	}
+	
+	public void updateLDWWins(boolean isWin, Result pre_r) {
+		// If it's the first spin
+		if (pre_r == null)
+			this.wins = (isWin) ? 1 : -1;
+		else {
+			// If the spin is an LDW as a win
+			if (isWin) {
+				if (this.wins < 0) {
+					pre_r.setLDWWins(this.wins);
+					this.wins = 1;
+				} else {
+					pre_r.setLDWWins(0);
+					this.wins += 1;
+				}
+			} else {
+				if (this.wins > 0) {
+					pre_r.setLDWWins(this.wins);
+					this.wins = -1;
+				} else {
+					pre_r.setLDWWins(0);
+					this.wins -= 1;
+				}
+			}
+		}
+	}
+	
+	public void updateLDWLosses(boolean isWin, Result pre_r) {
+		// If it's the first spin
+		if (pre_r == null)
+			this.losses = (isWin) ? 1 : -1;
+		else {
+			// If the spin is an LDW as a lose
+			if (isWin) {
+				if (this.losses < 0) {
+					pre_r.setLDWLosses(this.losses);
+					this.losses = 1;
+				} else {
+					pre_r.setLDWLosses(0);
+					this.losses += 1;
+				}
+			} else {
+				if (this.losses > 0) {
+					pre_r.setLDWLosses(this.losses);
+					this.losses = -1;
+				} else {
+					pre_r.setLDWLosses(0);
+					this.losses -= 1;
+				}
+			}
+		}
+	}
+	
+	public void resetLDWLosses() {
+		this.losses = 0;
 	}
 	
 	public void incrementBaseHit(String sequence, int payout) {
@@ -435,6 +501,7 @@ public class ResultsModel {
 			public void run() {
 				int total_freespin = 0;
 				boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
+				Result pre_result = null;
 				
 				ResultsModel.this.outputLog
 						.outputStringAndNewLine("START PRODUCTION");
@@ -559,10 +626,7 @@ public class ResultsModel {
 									r.setBlockNumber(ResultsModel.this.blocks
 											.get(ResultsModel.this.currblockindex)
 											.getBlockNumber());
-									//TODO: insert into table later until the LDWs are calculated
-									Database.insertIntoTable(ResultsModel.this
-											.getSpinResultsDBTableName(), r);
-									
+										
 									// If there are free spins awarded
 									if (r.freespinsawarded > 0) { 
 										total_freespin += r.freespinsawarded;
@@ -584,11 +648,26 @@ public class ResultsModel {
 										.addNumSpins(r.freespinsawarded);
 										ResultsModel.this.simulator.setSeqStops(false);
 									}
-
+									
 									if (ResultsModel.this.bonusactive) {
 										ResultsModel.this.decrementFreeSpins();									
 									}
+									
+									// Update the LDW information on the previous spin result
+									if (ResultsModel.this.currspin == 0) {
+										ResultsModel.this.updateLDWWins(r.isLDWWin(), null);
+										ResultsModel.this.updateLDWLosses(r.isLDWLose(), null);
+									} else {
+										ResultsModel.this.updateLDWWins(r.isLDWWin(), pre_result);
+										ResultsModel.this.updateLDWLosses(r.isLDWLose(), pre_result);
+										
+										// Insert previous spin result into the database
+										Database.insertIntoTable(ResultsModel.this
+												.getSpinResultsDBTableName(), pre_result);
+									}
+									
 									ResultsModel.this.incrementCurrSpin();
+									pre_result = r;
 									
 								} else {
 									ResultsModel.this.incrementFailedSpins();
@@ -600,7 +679,17 @@ public class ResultsModel {
 								}
 							}
 						}
-
+						
+						// Insert the last spin results into the database
+						if (pre_result != null) {
+							pre_result.setLDWWins(ResultsModel.this.wins);
+							pre_result.setLDWLosses(ResultsModel.this.losses);
+							
+							Database.insertIntoTable(ResultsModel.this
+									.getSpinResultsDBTableName(), pre_result);
+							}
+						
+						// Update the base & bonus hit counts
 						Database.updateTableHit(ResultsModel.this.getBasePaytableDBTableName(), 
 								ResultsModel.this.basehittable);
 						Database.updateTableHit(ResultsModel.this.getBonusPaytableDBTableName(), 
@@ -1271,6 +1360,8 @@ public class ResultsModel {
 		private short denomination = 1;
 
 		private int creditswon = 0;
+		private int ldw_wins = 0;
+		private int ldw_losses = 0;
 		private long blocknumber = 0;
 		private long recordNumber = 0;
 		private short lineswon = 0;
@@ -1446,6 +1537,14 @@ public class ResultsModel {
 			this.creditswon = value;
 		}
 
+		public void setLDWWins(int value) {
+			this.ldw_wins = value;
+		}
+		
+		public void setLDWLosses(int value) {
+			this.ldw_losses = value;
+		}
+		
 		public void setLinesWon(short value) {
 			this.lineswon = value;
 		}
@@ -1522,6 +1621,14 @@ public class ResultsModel {
 			return this.creditswon;
 		}
 
+		public int getLDWWins() {
+			return this.ldw_wins;
+		}
+		
+		public int getLDWLosses() {
+			return this.ldw_losses;
+		}
+		
 		public short getLinesWon() {
 			return this.lineswon;
 		}
@@ -1536,6 +1643,17 @@ public class ResultsModel {
 
 		public boolean getBonusSpin() {
 			return this.bonusspin;
+		}
+		
+		public boolean isLDWWin() {
+			return this.creditswon > 0;
+		}
+		
+		public boolean isLDWLose() {
+			if (ResultsModel.this.bonusactive)
+				return this.creditswon > 0;
+			else
+				return (this.creditswon - this.linebet * this.numlines) > 0;
 		}
 
 		public short getFreeSpinsAwarded() {
@@ -2047,8 +2165,6 @@ public class ResultsModel {
 							switch(type) {
 							// Bonus Scatter Symbol win
 							case "SCATTER":
-								//scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
-								
 								if (scatterwin > 0) {
 									winsequence = buildWinsequence(s.getAlias(), num);
 									this.model.incrementBonusHit(winsequence, scatterwin);
@@ -2059,9 +2175,7 @@ public class ResultsModel {
 								break;
 						
 							// Bonus Free Storm Scatter win
-							case "BONUS":
-								//scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
-								
+							case "BONUS":					
 								if (scatterwin > 0) {
 									winsequence = buildWinsequence(s.getAlias(), num);
 									this.model.incrementBonusHit(winsequence, scatterwin);
@@ -2073,11 +2187,10 @@ public class ResultsModel {
 								break;
 							// Bonus scatter win of all the other symbols
 							default:
-								//scatterwin = this.model.getBonusPayout(s.getAlias(), num - 1);
-								
 								if (scatterwin > 0) {
 									winsequence = buildWinsequence(s.getAlias(), num);
 									this.model.incrementBonusHit(winsequence, scatterwin);
+									scatterwin *= r.linebet;
 									//r.setScatter(scatterwin);
 									r.setCreditsWon(r.getCreditsWon() + scatterwin);
 								}
@@ -2180,13 +2293,15 @@ public class ResultsModel {
 			}
 			
 			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
-			if ((sr.bestBasicPayout > 0 || sr.activatedBonus) && !sr.wbBonusWon) {
+			if ((sr.bestBasicPayout > 0 || sr.activatedBonus) && !sr.wbBonusWon) 
 				r.incrementLinesWon();
-				if (sr.bestBasicPayout > 0) 
-					this.model.incrementBaseHit(sr.winsequence, sr.bestBasicPayout);
-				else 
-					this.model.incrementBaseHit(sr.winsequence, sr.bestFreeStormPayout);
-			}
+			
+			// increment the hit counts if there's a win of basic/bonus type
+			if (sr.bestBasicPayout > 0) 
+				this.model.incrementBaseHit(sr.winsequence, sr.bestBasicPayout);
+			else if (sr.activatedBonus) 
+				this.model.incrementBaseHit(sr.winsequence, sr.bestFreeStormPayout);
+			
 				
 			// add the win to a particular line.
 			r.addLineCreditWinAmount(line, creditswon);

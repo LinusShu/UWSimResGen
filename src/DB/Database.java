@@ -97,38 +97,6 @@ public class Database {
 	static PreparedStatement st = null;
 
 	static int batchRequests = 0;
-	
-//	public static void insertIntoTable(String tableName, BonusSpinOdd spinOdd)
-//			throws SQLException {
-//		tableName = tableName.toUpperCase();
-//		// If does not exist, create the table
-//		if (!Database.doesTableExist(tableName)) {
-//			String query = "create table " + tableName + " "
-//					+ "(SPINID bigint NOT NULL, " + "SLICE integer NOT NULL, "
-//					+ "SPINSAWARDED smallint NOT NULL)";
-//			Database.createTable(tableName, query);
-//		}
-//
-//		// Otherwise, add it to DB.
-//		String query = "insert into " + tableName
-//				+ "(SPINID,SLICE,SPINSAWARDED) " + "values(?,?,?)";
-//		try {
-//			if (st == null)
-//				st = conn.prepareStatement(query);
-//			st.setLong(1, spinOdd.getSpinID());
-//			st.setInt(2, spinOdd.getSlice());
-//			st.setShort(3, spinOdd.getSpinsAwarded());
-//
-//			st.addBatch();
-//			batchRequests++;
-//			if (batchRequests >= 1000) {
-//				batchRequests = 0;
-//				st.executeBatch();
-//			}
-//		} catch (SQLException e) {
-//			throw e;
-//		}
-//	}
 
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {
@@ -339,6 +307,8 @@ public class Database {
 					+ "LINEBET smallint NOT NULL, "
 					+ "DENOMINATION float NOT NULL, "
 					+ "CREDITSWON integer NOT NULL, "
+					+ "LDW_WINS integer NOT NULL, "
+					+ "LDW_LOSSES integer NOT NULL, "
 					+ "LINESWON smallint NOT NULL, "
 					+ "SCATTER integer NOT NULL, "
 					+ "BONUSACTIVATED boolean NOT NULL, "
@@ -383,9 +353,9 @@ public class Database {
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
-				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
+				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LDW_WINS, LDW_LOSSES, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
 				+ wbbWins_Credits  + freeStormWins_Credits + lineWins_Credits + ") "  
-				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
 				+ wbbWins_CreditsQ + freeStormWins_CreditsQ + lineWins_CreditsQ + ")";
 		try {
 			if (st == null)
@@ -401,13 +371,15 @@ public class Database {
 			st.setShort(9, result.getLineBet());
 			st.setDouble(10, result.getFormattedDenomination());
 			st.setInt(11, result.getCreditsWon());
-			st.setShort(12, result.getLinesWon());
-			st.setInt(13, result.getScatter());
-			st.setBoolean(14, result.getBonusActivated());
-			st.setBoolean(15, result.getBonusSpin());
-			st.setShort(16, result.getFreeSpinsAwarded());
+			st.setInt(12, result.getLDWWins());
+			st.setInt(13, result.getLDWLosses());
+			st.setShort(14, result.getLinesWon());
+			st.setInt(15, result.getScatter());
+			st.setBoolean(16, result.getBonusActivated());
+			st.setBoolean(17, result.getBonusSpin());
+			st.setShort(18, result.getFreeSpinsAwarded());
 
-			int startingIndex = 17;
+			int startingIndex = 19;
 
 			if (result.getWBBonusCreditWin() != null
 					&& result.getWBBonusCreditWin().size() > 0) {
@@ -447,7 +419,6 @@ public class Database {
 		}
 	}
 	
-	//TODO: implement the method to update hits in the base/bonus-paytable table
 	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
