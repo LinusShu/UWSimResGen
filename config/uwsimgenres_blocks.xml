@@ -9,7 +9,7 @@
 		-->
 		<!-- TODO: add a "blockrepeats" field for repeating the block [0,1000] times
 		-->		
-		<block numlines="10" linebet="1" denomination="1" numspins="100000" />
-		
+		<block numlines="10" linebet="1" denomination="1" numspins="100" blockrepeats="1000" />
+		<block numlines="5" linebet="1" denomination="1" numspins="100" blockrepeats="100" />
 	</blocks>
 </data>

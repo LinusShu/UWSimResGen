@@ -229,15 +229,16 @@ public class Database {
 					+ "LINEBET smallint NOT NULL, "
 					+ "DENOMINATION smallint NOT NULL, "
 					+ "FORMATTEDDENOMINATION float NOT NULL, "
-					+ "NUMOFSPINS bigint NOT NULL)";
+					+ "NUMOFSPINS bigint NOT NULL, " 
+					+ "REPEATS integer NOT NULL)";
 			Database.createTable(tableName, query);
 		}
 
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
-				+ "(BLOCKNUMBER, NUMOFLINES, LINEBET, DENOMINATION, FORMATTEDDENOMINATION, NUMOFSPINS) "
-				+ "values(?,?,?,?,?,?)";
+				+ "(BLOCKNUMBER, NUMOFLINES, LINEBET, DENOMINATION, FORMATTEDDENOMINATION, NUMOFSPINS, REPEATS) "
+				+ "values(?,?,?,?,?,?,?)";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
@@ -247,6 +248,7 @@ public class Database {
 			st.setShort(4, block.getDenomination());
 			st.setDouble(5, block.getFormattedDenomination());
 			st.setLong(6, block.getNumSpins());
+			st.setInt(7, block.getNumRepeats());
 
 			st.addBatch();
 			batchRequests++;
@@ -317,6 +319,7 @@ public class Database {
 			String query = "create table " + tableName + " "
 					+ "(RECORDNUMBER bigint NOT NULL, "
 					+ "BLOCKNUMBER bigint NOT NULL, "
+					+ "REPEATNUMBER integer NOT NULL, "
 					+ "REELSTOP1 smallint NOT NULL, "
 					+ "REELSTOP2 smallint NOT NULL, "
 					+ "REELSTOP3 smallint NOT NULL, "
@@ -372,33 +375,34 @@ public class Database {
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
-				+ "(RECORDNUMBER, BLOCKNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LDW_WINS, LDW_LOSSES, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
+				+ "(RECORDNUMBER, BLOCKNUMBER, REPEATNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LDW_WINS, LDW_LOSSES, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
 				+ wbbWins_Credits  + freeStormWins_Credits + lineWins_Credits + ") "  
-				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
 				+ wbbWins_CreditsQ + freeStormWins_CreditsQ + lineWins_CreditsQ + ")";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
 			st.setLong(1, result.getRecordNumber());
 			st.setLong(2, result.getBlockNumber());
-			st.setShort(3, result.getReelStop1());
-			st.setShort(4, result.getReelStop2());
-			st.setShort(5, result.getReelStop3());
-			st.setShort(6, result.getReelStop4());
-			st.setShort(7, result.getReelStop5());
-			st.setShort(8, result.getNumLines());
-			st.setShort(9, result.getLineBet());
-			st.setDouble(10, result.getFormattedDenomination());
-			st.setInt(11, result.getCreditsWon());
-			st.setInt(12, result.getLDWWins());
-			st.setInt(13, result.getLDWLosses());
-			st.setShort(14, result.getLinesWon());
-			st.setInt(15, result.getScatter());
-			st.setBoolean(16, result.getBonusActivated());
-			st.setBoolean(17, result.getBonusSpin());
-			st.setShort(18, result.getFreeSpinsAwarded());
+			st.setInt(3, result.getRepeatNumber());
+			st.setShort(4, result.getReelStop1());
+			st.setShort(5, result.getReelStop2());
+			st.setShort(6, result.getReelStop3());
+			st.setShort(7, result.getReelStop4());
+			st.setShort(8, result.getReelStop5());
+			st.setShort(9, result.getNumLines());
+			st.setShort(10, result.getLineBet());
+			st.setDouble(11, result.getFormattedDenomination());
+			st.setInt(12, result.getCreditsWon());
+			st.setInt(13, result.getLDWWins());
+			st.setInt(14, result.getLDWLosses());
+			st.setShort(15, result.getLinesWon());
+			st.setInt(16, result.getScatter());
+			st.setBoolean(17, result.getBonusActivated());
+			st.setBoolean(18, result.getBonusSpin());
+			st.setShort(19, result.getFreeSpinsAwarded());
 
-			int startingIndex = 19;
+			int startingIndex = 20;
 
 			if (result.getWBBonusCreditWin() != null
 					&& result.getWBBonusCreditWin().size() > 0) {

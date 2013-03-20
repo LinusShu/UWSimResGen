@@ -61,6 +61,7 @@ public class ResultsModel {
 	public static final int REEL_FIVE = 4;
 
 	public static final int PAYTABLE_BADPAYOUT = -99999;
+	public static final int MAX_BLOCKREPEATS = 1000;
 	
 	private final HashMap<Integer, Integer> freespin_lookuptable = new HashMap<Integer, Integer>() {
 		{
@@ -96,8 +97,10 @@ public class ResultsModel {
 	private boolean running = false;
 	private boolean paused = false;
 	private boolean error = false;
+	private boolean ldwResetRequired = false;
 	private Block currblock = null;
 	private int currblockindex = 0;
+	private int currblockrepeat = 1;
 	private boolean bonusactive = false;
 	private int wins = 0;
 	private int losses = 0;
@@ -309,7 +312,6 @@ public class ResultsModel {
 	
 	public void updateLDWWins(boolean isWin, Result pre_r) {
 		// If it's the first spin
-		//TODO look at this
 		if (pre_r == null)
 			this.wins = (isWin) ? 1 : -1;
 		else {
@@ -358,10 +360,6 @@ public class ResultsModel {
 				}
 			}
 		}
-	}
-	
-	public void resetLDWLosses() {
-		this.losses = 0;
 	}
 	
 	public void incrementBaseHit(String sequence, int payout) {
@@ -510,7 +508,7 @@ public class ResultsModel {
 				int ts = 0;
 
 				for (Block b : ResultsModel.this.blocks) {
-					ts += b.numspins;
+					ts += b.getNumSpins() * b.getNumRepeats();
 				}
 
 				ResultsModel.this.setTotalSpins(ts);
@@ -627,7 +625,8 @@ public class ResultsModel {
 									r.setBlockNumber(ResultsModel.this.blocks
 											.get(ResultsModel.this.currblockindex)
 											.getBlockNumber());
-										
+									r.setRepeatNumber(ResultsModel.this.currblockrepeat);
+									
 									// If there are free spins awarded
 									if (r.freespinsawarded > 0) { 
 										total_freespin += r.freespinsawarded;
@@ -655,9 +654,10 @@ public class ResultsModel {
 									}
 									
 									// Update the LDW information on the previous spin result
-									if (ResultsModel.this.currspin == 0) {
+									if (ResultsModel.this.currspin == 0 || ResultsModel.this.ldwResetRequired) {
 										ResultsModel.this.updateLDWWins(r.isLDWWin(), null);
 										ResultsModel.this.updateLDWLosses(r.isLDWLose(), null);
+										ResultsModel.this.ldwResetRequired = false;
 									} else {
 										ResultsModel.this.updateLDWWins(r.isLDWWin(), pre_result);
 										ResultsModel.this.updateLDWLosses(r.isLDWLose(), pre_result);
@@ -666,12 +666,19 @@ public class ResultsModel {
 										Database.insertIntoTable(ResultsModel.this
 												.getSpinResultsDBTableName(), pre_result);
 									}
+//									if (ResultsModel.this.currspin == 99)
+//										System.out.println("Stop Here!");
 									
 									ResultsModel.this.incrementCurrSpin();
 									pre_result = r;
 									
-									if (ResultsModel.this.currspin == ResultsModel.this.totalspins)
-										System.out.println("Last Spin");
+									// If one block or one blockrepeat is done
+									if (ResultsModel.this.ldwResetRequired) {
+										pre_result.setLDWWins(ResultsModel.this.wins);
+										pre_result.setLDWLosses(ResultsModel.this.losses);
+										Database.insertIntoTable(ResultsModel.this
+												.getSpinResultsDBTableName(), pre_result);
+									}
 								} else {
 									ResultsModel.this.incrementFailedSpins();
 									ResultsModel.this.outputLog
@@ -821,13 +828,23 @@ public class ResultsModel {
 
 	protected void incrementCurrSpin() {
 		this.currspin++;
-
+		//TODO 
 		if (this.currblock.incrementCurrSpin()) {
-			this.currblockindex++;
-			if (this.currblockindex < this.blocks.size()) {
-				this.currblock = this.blocks.get(currblockindex);
+			// If currblock needs to be repeated
+			if (this.currblockrepeat < this.currblock.repeats) {
+				this.currblockrepeat++;
+				this.currblock.currspin = 0;
+				this.ldwResetRequired = true;
 			} else {
-				this.currblock = null;
+				this.currblockindex++;
+				if (this.currblockindex < this.blocks.size()) {
+					this.currblock = this.blocks.get(currblockindex);
+					this.currblockrepeat = 1;
+					this.ldwResetRequired = true;
+				} else {
+					this.currblock = null;
+					this.currblockrepeat = 1;
+				}
 			}
 		}
 
@@ -890,6 +907,7 @@ public class ResultsModel {
 				short linebet = -1;
 				short denomination = -1;
 				int numspins = -1;
+				int blockrepeats = -1;
 
 				try {
 					numlines = Short.parseShort(e.getAttribute("numlines")); // Integer.parseInt(e.getAttribute("numlines"));
@@ -923,19 +941,29 @@ public class ResultsModel {
 							+ "] - Invalid value for 'numspins'. Value: "
 							+ e.getAttribute("numspins"));
 				}
+				
+				try {
+					blockrepeats = Integer.parseInt(e.getAttribute("blockrepeats"));
+				} catch (NumberFormatException nfe) {
+					this.addErrorToLog2("Block[" + Integer.toString(i)
+							+ "] - Invalid value for 'blockrepeats'. Value: "
+							+ e.getAttribute("blockrepeats"));
+				}
 
 				if (numlines > 0 && linebet > 0 && denomination > 0
-						&& numspins > 0) {
+						&& numspins > 0 && blockrepeats > 0 && blockrepeats <= MAX_BLOCKREPEATS) {
 					Block b = new Block();
 					b.setNumLines(numlines);
 					b.setLineBet(linebet);
 					b.setDenomination(denomination);
 					b.setNumSpins(numspins);
+					b.setRepeats(blockrepeats);
 					this.blocks.add(b);
 				} else {
 					this.addErrorToLog2("Block["
 							+ Integer.toString(i)
-							+ "] - All attributes must be integers greater than 0.");
+							+ "] - All attributes must be integers greater than 0; blockrepeats must be less than " +
+							+ MAX_BLOCKREPEATS + ".");
 				}
 
 			}
@@ -1367,6 +1395,7 @@ public class ResultsModel {
 		private int ldw_losses = 0;
 		private long blocknumber = 0;
 		private long recordNumber = 0;
+		private int repeatNumber = 0;
 		private short lineswon = 0;
 		private int scatter = 0;
 		private boolean bonusactivated = false;
@@ -1527,6 +1556,10 @@ public class ResultsModel {
 		public void setBlockNumber(long value) {
 			this.blocknumber = value;
 		}
+		
+		public void setRepeatNumber(int value) {
+			this.repeatNumber = value;
+		}
 
 		public void setLineBet(short value) {
 			this.linebet = value;
@@ -1586,6 +1619,10 @@ public class ResultsModel {
 
 		public long getBlockNumber() {
 			return this.blocknumber;
+		}
+		
+		public int getRepeatNumber() {
+			return this.repeatNumber;
 		}
 
 		public short getReelStop1() {
@@ -1742,9 +1779,10 @@ public class ResultsModel {
 		private short linebet = 1;
 		private short denomination = 1;
 		private int numspins = 0;
+		private int repeats = 1;
 		private int currspin = 0;
 		private long blockNumber = 0;
-
+		
 		public Block() {
 		}
 
@@ -1773,6 +1811,10 @@ public class ResultsModel {
 			this.numspins = value;
 		}
 
+		public void setRepeats(int value) {
+			this.repeats = value;
+		}
+		
 		public void setBlockNumber(long value) {
 			this.blockNumber = value;
 		}
@@ -1792,9 +1834,13 @@ public class ResultsModel {
 		public long getBlockNumber() {
 			return this.blockNumber;
 		}
-
+		
 		public int getNumSpins() {
 			return this.numspins;
+		}
+		
+		public int getNumRepeats() {
+			return this.repeats;
 		}
 
 		public double getFormattedDenomination() {
