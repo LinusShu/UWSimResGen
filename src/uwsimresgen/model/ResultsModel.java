@@ -309,6 +309,7 @@ public class ResultsModel {
 	
 	public void updateLDWWins(boolean isWin, Result pre_r) {
 		// If it's the first spin
+		//TODO look at this
 		if (pre_r == null)
 			this.wins = (isWin) ? 1 : -1;
 		else {
@@ -669,6 +670,8 @@ public class ResultsModel {
 									ResultsModel.this.incrementCurrSpin();
 									pre_result = r;
 									
+									if (ResultsModel.this.currspin == ResultsModel.this.totalspins)
+										System.out.println("Last Spin");
 								} else {
 									ResultsModel.this.incrementFailedSpins();
 									ResultsModel.this.outputLog
@@ -679,7 +682,7 @@ public class ResultsModel {
 								}
 							}
 						}
-						
+						//TODO look at this
 						// Insert the last spin results into the database
 						if (pre_result != null) {
 							pre_result.setLDWWins(ResultsModel.this.wins);
@@ -1651,7 +1654,7 @@ public class ResultsModel {
 		
 		public boolean isLDWLose() {
 			if (ResultsModel.this.bonusactive)
-				return this.creditswon > 0;
+				return true;
 			else
 				return (this.creditswon - this.linebet * this.numlines) > 0;
 		}
@@ -2168,7 +2171,7 @@ public class ResultsModel {
 								if (scatterwin > 0) {
 									winsequence = buildWinsequence(s.getAlias(), num);
 									this.model.incrementBonusHit(winsequence, scatterwin);
-									scatterwin *= currblock.linebet * r.maxlines;
+									scatterwin *= r.linebet * r.maxlines;
 									r.setScatter(scatterwin);
 									r.setCreditsWon(r.getCreditsWon() + scatterwin);
 								}
@@ -2180,6 +2183,7 @@ public class ResultsModel {
 									winsequence = buildWinsequence(s.getAlias(), num);
 									this.model.incrementBonusHit(winsequence, scatterwin);
 									short freespins = this.getAwardedSpins(scatterwin);
+									scatterwin *= r.linebet;
 									r.setCreditsWon(r.getCreditsWon() + scatterwin);
 									r.setFreeSpinsAwarded(freespins);
 									r.setBonusActivated(true);

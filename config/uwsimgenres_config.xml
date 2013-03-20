@@ -6,7 +6,9 @@
 			The reel symbols of the slot machine
 			Acceptable Values(AV) for id: [integer value] - DO NOT CHANGE
 			AV for type: [basic|scatter|bonus|wbbonus]
-			AV for alias: [single character of alphabet, A to Z]
+			AV for alias: [single upper-case character of alphabet, [A-JSWZ]]
+			WARNING: PAR sheet symbol mappings are pre-defined in Database.java; 
+					 change the mappings if characters other than the following are used as alias.
 		-->
 		<!-- ALL IMAGES USED MUST BE A SPRITE SHEET
 			Symbol Mappings:
@@ -120,39 +122,8 @@
 		<basePayTableEntry winCode="0010" sequence="JJJJJ" basePayout="10000" type="basic" />
 		
 		<basePayTableEntry winCode="0011" sequence="SS###" basePayout="2" type="scatter" />
-		<!--
-		<basePayTableEntry winCode="0011" sequence="S#S##" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="S##S#" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="S###S" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="#SS##" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="#S#S#" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="#S##S" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="##SS#" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="##S#S" basePayout="2" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="###SS" basePayout="2" type="scatter" />
-		-->
-		
 		<basePayTableEntry winCode="0011" sequence="SSS##" basePayout="5" type="scatter"  />
-		<!--
-		<basePayTableEntry winCode="0011" sequence="##SSS" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="SS#S#" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="#S#SS" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="SS##S" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="S##SS" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="S#SS#" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="#SS#S" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="S#S#S" basePayout="5" type="scatter"  />
-		<basePayTableEntry winCode="0011" sequence="#SSS#" basePayout="5" type="scatter"  />
-		-->
-		
 		<basePayTableEntry winCode="0011" sequence="SSSS#" basePayout="20" type="scatter" />
-		<!-- 
-		<basePayTableEntry winCode="0011" sequence="SSS#S" basePayout="20" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="SS#SS" basePayout="20" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="S#SSS" basePayout="20" type="scatter" />
-		<basePayTableEntry winCode="0011" sequence="#SSSS" basePayout="20" type="scatter" />
-		-->
-		
 		<basePayTableEntry winCode="0011" sequence="SSSSS" basePayout="100" type="scatter" />
 		
 		<basePayTableEntry winCode="0012" sequence="ZZZ##" basePayout="25"  type="bonus" />
@@ -161,14 +132,16 @@
 		
 		<basePayTableEntry winCode="0013" sequence="##WWW" basePayout="0" type="wbbonus" />
 	</basePayTable>
+	
 	<bonusPayTable>
 		<!-- bonusPayTableEntry Info
 			The paytable of the slot machine
 			AV for id: [integer] - DO NOT MODIFY
-			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; use # to represent ANY symbol;
-							  except for wbbonus, a mapping between the number of symbols and payout is created, 
-							  so make sure no two entries have the same number of symbols]
-			AV for basePayout: [integer value greater than 0] 
+			AV for sequence: [exactly 5 characters, each of which matches a symbol alias defined in "symbols"; 
+							  use # to represent ANY symbol;]
+			AV for basePayout: [integer value >= 0] 
+			WARNING: except for wbbonus, a mapping between the number of symbols and payout is created, 
+				     so make sure no two entries have the same number of symbols in the sequence.
 		-->
 		<bonusPayTableEntry winCode="0001" sequence="AAA##" basePayout="5" type="bscatter" /> 
 		<bonusPayTableEntry winCode="0001" sequence="AAAA#" basePayout="25" type="bscatter"  />
@@ -218,62 +191,12 @@
 		<bonusPayTableEntry winCode="0010" sequence="JJJJJ" basePayout="10000" type="bscatter"  />
 		
 		<bonusPayTableEntry winCode="0011" sequence="SS###" basePayout="2" type="scatter"  />
-		<!-- 
-		<bonusPayTableEntry winCode="0011" sequence="S#S##" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S##S#" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S###S" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#SS##" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#S#S#" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#S##S" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="##SS#" basePayout="2" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="##S#S" basePayout="2"  type="scatter" />
-		<bonusPayTableEntry winCode="0011" sequence="###SS" basePayout="2" type="scatter"  />
-		-->
-		
 		<bonusPayTableEntry winCode="0011" sequence="SSS##" basePayout="5" type="scatter"  />
-		<!--  
-		<bonusPayTableEntry winCode="0011" sequence="##SSS" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="SS#S#" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#S#SS" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="SS##S" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S##SS" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S#SS#" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#SS#S" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S#S#S" basePayout="5" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#SSS#" basePayout="5" type="scatter"  />
-		-->
-		
 		<bonusPayTableEntry winCode="0011" sequence="SSSS#" basePayout="20" type="scatter"  />
-		<!--  
-		<bonusPayTableEntry winCode="0011" sequence="SSS#S" basePayout="20" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="SS#SS" basePayout="20" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="S#SSS" basePayout="20" type="scatter"  />
-		<bonusPayTableEntry winCode="0011" sequence="#SSSS" basePayout="20" type="scatter"  />
-		-->
-		
 		<bonusPayTableEntry winCode="0011" sequence="SSSSS" basePayout="100" type="scatter" />
 		
 		<bonusPayTableEntry winCode="0012" sequence="ZZZ##" basePayout="25" type="bonus" />
-		<!-- 
-		<bonusPayTableEntry winCode="0012" sequence="##ZZZ" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="ZZ#Z#" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="#Z#ZZ" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="ZZ##Z" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="Z##ZZ" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="Z#ZZ#" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="#ZZ#Z" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="Z#Z#Z" basePayout="0" type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="#ZZZ#" basePayout="0" type="bonus" /> 
-		-->
-		
 		<bonusPayTableEntry winCode="0012" sequence="ZZZZ#" basePayout="100"  type="bonus" />
-		<!--  
-		<bonusPayTableEntry winCode="0012" sequence="ZZZ#Z" basePayout="0"  type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="ZZ#ZZ" basePayout="0"  type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="Z#ZZZ" basePayout="0"  type="bonus" />
-		<bonusPayTableEntry winCode="0012" sequence="#ZZZZ" basePayout="0"  type="bonus" />
-		-->
-		
 		<bonusPayTableEntry winCode="0012" sequence="ZZZZZ" basePayout="250"  type="bonus" />
 		
 		<bonusPayTableEntry winCode="0013" sequence="##WWW" basePayout="0" type="wbbonus" />
@@ -282,8 +205,9 @@
 	<reelMappings>
 		<!-- reelStop Info
 			The reel stops of the slot machine
+			Current Version: 90.022%
 			AV for id: [integer value greater than or equal to 0] DO NOT MODIFY
-			AV for r1 to r5: [single character matching a symbol alias]
+			AV for r1 to r5: [single character matching a symbol alias defined above]
 		-->
 		<reelStop id="0" r1="J" r2="J" r3="W" r4="G" r5="J" />
 		<reelStop id="1" r1="C" r2="E" r3="A" r4="W" r5="D" />

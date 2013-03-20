@@ -67,6 +67,24 @@ public class Database {
 
 	private static Connection conn = null;
 	private static ArrayList<String> listOfTables;
+	
+	private static final HashMap<String, String> PAR_MAPPING = new HashMap<String, String>() {
+		{
+			put("A", "F4");
+			put("B", "F3");
+			put("C", "F2");
+			put("D", "F1");
+			put("E", "M5");
+			put("F", "M4");
+			put("G", "M3");
+			put("H", "M2");
+			put("I", "M1");
+			put("J", "LO");
+			put("S", "B1");
+			put("W", "B2");
+			put("Z", "B3");
+		};
+	};
 
 	private static int maxLines;
 
@@ -101,11 +119,13 @@ public class Database {
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {
 		tableName = tableName.toUpperCase();
+		String parSequence = convertToPARSequence(paytableEntry.getSequence());
 		// If does not exist, create the table
 		if (!Database.doesTableExist(tableName)) {
 			String query = "create table " + tableName + " "
 					+ "(ENTRYID bigint NOT NULL, "
 					+ "WINCODE varchar(10) NOT NULL, "
+					+ "PARCOMBO varchar(20) NOT NULL, "
 					+ "SEQUENCE varchar(10) NOT NULL, "
 					+ "PAYOUT integer NOT NULL, "
 					+ "TYPE varchar(10) NOT NULL, "
@@ -115,8 +135,8 @@ public class Database {
 
 		// Otherwise, add it to DB.
 		String query = "insert into " + tableName
-				+ "(ENTRYID,WINCODE,SEQUENCE,PAYOUT,TYPE,HITS) "
-				+ "values(?,?,?,?,?,?)";
+				+ "(ENTRYID,WINCODE,PARCOMBO,SEQUENCE,PAYOUT,TYPE,HITS) "
+				+ "values(?,?,?,?,?,?,?)";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
@@ -125,15 +145,13 @@ public class Database {
 				int[] wbbonuspay = {2, 5, 8, 10, 15, 25};
 				
 				for (int i=0; i < wbbonuspay.length; i++) {
-					//String sequence = paytableEntry.getSequence()
-					//		+ wbbonuspay[i];
-					
 					st.setLong(1, paytableEntry.getEntryID());
 					st.setString(2, paytableEntry.getWinCode());
-					st.setString(3, paytableEntry.getSequence());
-					st.setInt(4, wbbonuspay[i]);
-					st.setString(5, paytableEntry.getType().toString());
-					st.setLong(6, 0);
+					st.setString(3, parSequence);
+					st.setString(4, paytableEntry.getSequence());
+					st.setInt(5, wbbonuspay[i]);
+					st.setString(6, paytableEntry.getType().toString());
+					st.setLong(7, 0);
 					
 					st.addBatch();
 					batchRequests++;
@@ -141,10 +159,11 @@ public class Database {
 			} else {
 				st.setLong(1, paytableEntry.getEntryID());
 				st.setString(2, paytableEntry.getWinCode());
-				st.setString(3, paytableEntry.getSequence());
-				st.setInt(4, paytableEntry.getPayout());
-				st.setString(5, paytableEntry.getType().toString());
-				st.setLong(6, 0);
+				st.setString(3, parSequence);
+				st.setString(4, paytableEntry.getSequence());
+				st.setInt(5, paytableEntry.getPayout());
+				st.setString(6, paytableEntry.getType().toString());
+				st.setLong(7, 0);
 				
 				st.addBatch();
 				batchRequests++;
@@ -422,24 +441,26 @@ public class Database {
 	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
+		PreparedStatement update = null;
 		
 		String query = "update " + tableName 
 				+ " set HITS = ? "
 				+ "where SEQUENCE = ? "
 				+ "and PAYOUT = ?";
 		
+		update = conn.prepareStatement(query);
 		Iterator<Map.Entry<SimpleEntry<String, Integer>, Integer>> entries = hittable.entrySet().iterator();
 		while (entries.hasNext()) { 
 				Map.Entry<SimpleEntry<String, Integer>, Integer> entry = entries.next();
 			try {
 				conn.setAutoCommit(false);
-				st = conn.prepareStatement(query);
-				st.setLong(1, entry.getValue());
-				st.setString(2, entry.getKey().getKey());
-				st.setInt(3, entry.getKey().getValue());
-//				st.executeUpdate();
-				st.addBatch();
-				st.executeBatch();
+//				st = conn.prepareStatement(query);
+				update.setLong(1, entry.getValue());
+				update.setString(2, entry.getKey().getKey());
+				update.setInt(3, entry.getKey().getValue());
+				update.executeUpdate();
+//				st.addBatch();
+//				st.executeBatch();
 				conn.commit();
 			
 			} catch (SQLException e) {
@@ -544,6 +565,19 @@ public class Database {
 				throw se;
 			}
 		}
+	}
+	
+	public static String convertToPARSequence(String sequence) {
+		String parSequence = "";
+		
+		for (int i=0; i < sequence.length(); i++) {
+			if (sequence.charAt(i) != '#') {
+				parSequence += PAR_MAPPING.get(String.valueOf(sequence.charAt(i)));
+			} else 
+				parSequence += "#";
+		}
+		
+		return parSequence;
 	}
 
 }
