@@ -6,10 +6,30 @@
 			linebet - integer > 0
 			denomination - integer > 0 ( note: you are specifying the number of cents as an integer value, ie: 1 represents 1 cent )
 			numspins - integer > 0
-		-->
-		<!-- TODO: add a "blockrepeats" field for repeating the block [0,1000] times
-		-->		
-		<block numlines="10" linebet="1" denomination="1" numspins="100" blockrepeats="1000" />
-		<block numlines="5" linebet="1" denomination="1" numspins="100" blockrepeats="100" />
+		-->	
+		<block numlines="1" linebet="1" denomination="1" numspins="600" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="600" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="600" blockrepeats="1000" />
+		
+		<block numlines="1" linebet="1" denomination="1" numspins="1200" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="1200" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="1200" blockrepeats="1000" />
+		
+		<block numlines="1" linebet="1" denomination="1" numspins="2400" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="2400" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="2400" blockrepeats="1000" />
+		
+		<block numlines="1" linebet="1" denomination="1" numspins="6000" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="6000" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="6000" blockrepeats="1000" />
+		
+		<block numlines="1" linebet="1" denomination="1" numspins="15000" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="15000" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="15000" blockrepeats="1000" />
+		
+		<block numlines="1" linebet="1" denomination="1" numspins="300000" blockrepeats="1000" />
+		<block numlines="10" linebet="1" denomination="1" numspins="300000" blockrepeats="1000" />
+		<block numlines="20" linebet="1" denomination="1" numspins="300000" blockrepeats="1000" />
+		
 	</blocks>
 </data>

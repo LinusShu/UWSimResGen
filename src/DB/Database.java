@@ -484,7 +484,7 @@ public class Database {
 			} catch (SQLException e) {
 				throw e;
 			}
-			;
+			
 		}
 	}
 

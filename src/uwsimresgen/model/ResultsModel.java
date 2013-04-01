@@ -98,6 +98,8 @@ public class ResultsModel {
 	private boolean paused = false;
 	private boolean error = false;
 	private boolean ldwResetRequired = false;
+	private boolean repeatComplete = false;
+	private boolean blockComplete = false;
 	private Block currblock = null;
 	private int currblockindex = 0;
 	private int currblockrepeat = 1;
@@ -666,18 +668,18 @@ public class ResultsModel {
 										Database.insertIntoTable(ResultsModel.this
 												.getSpinResultsDBTableName(), pre_result);
 									}
-//									if (ResultsModel.this.currspin == 99)
-//										System.out.println("Stop Here!");
-									
+
 									ResultsModel.this.incrementCurrSpin();
 									pre_result = r;
 									
 									// If one block or one blockrepeat is done
 									if (ResultsModel.this.ldwResetRequired) {
+										//TODO add insertion to the loss_percentage table
 										pre_result.setLDWWins(ResultsModel.this.wins);
 										pre_result.setLDWLosses(ResultsModel.this.losses);
 										Database.insertIntoTable(ResultsModel.this
 												.getSpinResultsDBTableName(), pre_result);
+										ResultsModel.this.ldwResetRequired = false;
 									}
 								} else {
 									ResultsModel.this.incrementFailedSpins();
@@ -828,15 +830,20 @@ public class ResultsModel {
 
 	protected void incrementCurrSpin() {
 		this.currspin++;
-		//TODO 
+		//TODO
+		// If the currblock runs out of spins 
 		if (this.currblock.incrementCurrSpin()) {
 			// If currblock needs to be repeated
 			if (this.currblockrepeat < this.currblock.repeats) {
 				this.currblockrepeat++;
 				this.currblock.currspin = 0;
 				this.ldwResetRequired = true;
-			} else {
+				this.repeatComplete = true;
+			} else { // If the currblock is done
 				this.currblockindex++;
+				this.blockComplete = true;
+				
+				// If there are more blocks
 				if (this.currblockindex < this.blocks.size()) {
 					this.currblock = this.blocks.get(currblockindex);
 					this.currblockrepeat = 1;
@@ -1741,6 +1748,80 @@ public class ResultsModel {
 		}
 	}
 
+	public class LossPercentageEntry {
+		private int numspins = 0;
+		private int numline = 0;
+		private int loss = 0;
+		private int ldw = 0;
+		private int win = 0;
+		private int balance = 0;
+		
+		private ArrayList<Integer> losspercentages = new ArrayList<Integer>();
+
+		public LossPercentageEntry() {
+			for(int i = 0; i < 8; i++)
+				this.losspercentages.add(0);
+		}
+		
+		public int getNumSpins() {
+			return numspins;
+		}
+
+		public void setNumSpins(int numspins) {
+			this.numspins = numspins;
+		}
+
+		public int getNumLine() {
+			return numline;
+		}
+
+		public void setNumLine(int numline) {
+			this.numline = numline;
+		}
+
+		public int getLoss() {
+			return loss;
+		}
+
+		public void setLoss(int loss) {
+			this.loss = loss;
+		}
+
+		public int getLdw() {
+			return ldw;
+		}
+
+		public void setLdw(int ldw) {
+			this.ldw = ldw;
+		}
+
+		public int getWin() {
+			return win;
+		}
+
+		public void setWin(int win) {
+			this.win = win;
+		}
+
+		public int getBalance() {
+			return balance;
+		}
+
+		public void setBalance(int balance) {
+			this.balance = balance;
+		}
+		
+		public int getLossPercentage(int index) {
+			return this.losspercentages.get(index);
+		}
+		
+		public void addToLossPercentage(int index) {
+			this.losspercentages.set(index, this.losspercentages.get(index) + 1);
+		}
+		
+		
+	}
+	
 	public class Symbol {
 		private SymbolType type = SymbolType.BASIC;
 		private String alias = "";
