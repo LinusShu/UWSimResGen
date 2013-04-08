@@ -64,6 +64,7 @@ public class ResultsModel {
 	public static final int PAYTABLE_BADPAYOUT = -99999;
 	public static final int MAX_BLOCKREPEATS = 1000;
 	
+	@SuppressWarnings("serial")
 	private final HashMap<Integer, Integer> freespin_lookuptable = new HashMap<Integer, Integer>() {
 		{
 			put(25, 3);
@@ -82,6 +83,7 @@ public class ResultsModel {
 	private HashMap<String, ArrayList<Integer>> bonuscatterpaytable = new HashMap<String, ArrayList<Integer>>();
 	private HashMap<SimpleEntry<String, Integer>, Integer> basehittable = new HashMap<SimpleEntry<String, Integer>, Integer>();
 	private HashMap<SimpleEntry<String, Integer>, Integer> bonushittable = new HashMap<SimpleEntry<String, Integer>, Integer>();
+	
 	private ArrayList<String> reel1 = new ArrayList<String>();
 	private ArrayList<String> reel2 = new ArrayList<String>();
 	private ArrayList<String> reel3 = new ArrayList<String>();
@@ -98,16 +100,22 @@ public class ResultsModel {
 	private boolean running = false;
 	private boolean paused = false;
 	private boolean error = false;
+	
 	private boolean ldwResetRequired = false;
 	private boolean repeatComplete = false;
 	private boolean blockComplete = false;
 	private boolean genAllBonusSpins = false;
+	private short genallnumlines = 1;
+	private boolean createSpinTable = true;
+	private boolean genGamblersRuin = false;
+	
 	private Block currblock = null;
-	private LossPercentageEntry currlpe = null;
 	private int currblockindex = 0;
 	private int currblockrepeat = 1;
+	private LossPercentageEntry currlpe = null;
+	
 	private boolean bonusactive = false;
-	private boolean createSpinTable = true;
+
 	private int wins = 0;
 	private int losses = 0;
 	private int currspin = 0;
@@ -115,10 +123,10 @@ public class ResultsModel {
 	private int failedspins = 0;
 	private int freespins = 0;
 	private int totalspins = 0;
-	private short genallnumlines = 1;
-
+	
 	private File configfile = null;
 	private File blocksfile = null;
+	
 	private String tableprefix = DEFAULT_TABLE_PREFIX;
 	private String tablesuffix = "";
 	private Boolean suffixAvailable = false;
@@ -223,6 +231,10 @@ public class ResultsModel {
 		this.UpdateViews();
 	}
 
+	public void setGenGamblersRuin(boolean value) {
+		this.genGamblersRuin = value;
+	}
+	
 	public boolean getGenAllStops() {
 		return this.simulator.getSeqStops();
 	}
@@ -770,56 +782,6 @@ public class ResultsModel {
 
 	}
 
-	/* CONSUMER */
-	// NOT USED!!!!
-//	private void consume() {
-//		Thread t = new Thread() {
-//			public void run() {
-//
-//				int timeouts = 0;
-//				int timeoutlimit = 3;
-//
-//				try {
-//					Database.createConnection();
-//					while (!ResultsModel.this.isCancelled()
-//							&& ResultsModel.this.isRunning()) {
-//
-//						Result r = resultqueue.take();
-//						if (!r.getNullObject()) {
-//							timeouts = 0;
-//							Database.insertIntoTable(ResultsModel.this
-//									.getSpinResultsDBTableName(), r);
-//							ResultsModel.this.incrementConsumed();
-//						} else {
-//							break;
-//						}
-//					}
-//
-//					ResultsModel.this.stop();
-//
-//				} catch (Exception e) {
-//					ResultsModel.this.cancel();
-//					ResultsModel.this.outputLog
-//							.outputStringAndNewLine("ERROR: Consumption thread caught an exception. Message="
-//									+ e.getMessage());
-//					e.printStackTrace();
-//				} finally {
-//					try {
-//						Database.shutdownConnection();
-//					} catch (SQLException e) {
-//						ResultsModel.this.outputLog
-//								.outputStringAndNewLine("ERROR: Closing database connection. Message="
-//										+ e.getMessage());
-//						e.printStackTrace();
-//					}
-//				}
-//			}
-//		};
-//
-//		t.setPriority(Thread.MAX_PRIORITY);
-//		t.start();
-//	}
-
 	protected void generateDBTableName() {
 		this.setTableSuffix();
 		this.outputLog.outputStringAndNewLine("Set Blocks DB Table Name: "
@@ -934,11 +896,6 @@ public class ResultsModel {
 		//TODO implement method
 		
 	}
-
-//	protected void incrementConsumed() {
-//		this.currconsumedspin++;
-//		this.UpdateViews();
-//	}
 
 	/* GET CONFIGURATION */
 
@@ -1560,7 +1517,7 @@ public class ResultsModel {
 					+ Integer.toString(reelstop4) + " r5="
 					+ Integer.toString(reelstop5) + " numlines="
 					+ Integer.toString(numlines) + " linebet="
-					+ Integer.toString(linebet) + " denom="
+					+ Short.toString(linebet) + " denom="
 					+ Double.toString(getFormattedDenomination())
 					+ " creditswon=" + Integer.toString(creditswon)
 					+ " lineswon=" + Integer.toString(lineswon) + " scatter="
@@ -1831,20 +1788,21 @@ public class ResultsModel {
 		private short numline = 0;
 		private int numfreespins = 0;
 		private long blocknum = 0;
+		private double denomination = 0;
 		private int bet = 0;
 		private int loss = 0;
 		private int ldw = 0;
 		private int win = 0;
 		
-		private long initialbalance = 0;
-		private long avgbalance = 0;
+		private double initialbalance = 0;
+		private double avgbalance = 0;
 		private int curBalanceIndex = 0;
 		
 		private int repeats = 0;
 		private double sd = 0;
 		
 		private ArrayList<Integer> losspercentages = new ArrayList<Integer>();
-		private ArrayList<Long> balances = new ArrayList<Long>();
+		private ArrayList<Double> balances = new ArrayList<Double>();
 		private ArrayList<Range> ranges = new ArrayList<Range>();
 		//TODO add fields if needed
 		
@@ -1853,6 +1811,7 @@ public class ResultsModel {
 			this.numline = currblock.getNumLines();
 			this.blocknum = currblock.getBlockNumber();
 			this.repeats = currblock.getNumRepeats();
+			this.denomination = currblock.getFormattedDenomination();
 			
 			this.bet = currblock.getNumLines() * currblock.getLineBet();
 			this.curBalanceIndex = 0;
@@ -1935,8 +1894,8 @@ public class ResultsModel {
 		private void calculateSD() {
 			double sdbalance = 0;
 			
-			for (long b : this.balances)
-				sdbalance += (double)(avgbalance - b) * (double)(avgbalance - b);
+			for (double b : this.balances)
+				sdbalance += (avgbalance - b * this.denomination) * (avgbalance - b * this.denomination);
 			
 			sdbalance /= this.balances.size();
 			this.sd = Math.sqrt(sdbalance);
@@ -1974,15 +1933,15 @@ public class ResultsModel {
 			this.avgbalance = avgBalance();
 		}
 		
-		public long getAvgBalance() {
+		public double getAvgBalance() {
 			return this.avgbalance;
 		}
 		
-		public int avgBalance() {
+		public double avgBalance() {
 			int totalbalance = 0;
 			
-			for (long l : this.balances)
-				totalbalance += l;
+			for (double b : this.balances)
+				totalbalance += b * this.denomination;
 			
 			return totalbalance/this.repeats;
 		}
