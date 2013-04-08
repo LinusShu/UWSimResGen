@@ -33,6 +33,7 @@ public class ResultsModel {
 	public static String SYMBOLS_TABLE_NAME = "Symbols";
 	public static String BLOCKS_TABLE_NAME = "Blocks";
 	public static String PAYLINES_TABLE_NAME = "Paylines";
+	public static String LOSS_PER_TABLE_NAME = "LossPercentage";
 
 	public static enum SymbolType {
 		BASIC, SCATTER, BONUS, WBBONUS, UNKNOWN
@@ -100,10 +101,13 @@ public class ResultsModel {
 	private boolean ldwResetRequired = false;
 	private boolean repeatComplete = false;
 	private boolean blockComplete = false;
+	private boolean genAllBonusSpins = false;
 	private Block currblock = null;
+	private LossPercentageEntry currlpe = null;
 	private int currblockindex = 0;
 	private int currblockrepeat = 1;
 	private boolean bonusactive = false;
+	private boolean createSpinTable = true;
 	private int wins = 0;
 	private int losses = 0;
 	private int currspin = 0;
@@ -205,6 +209,14 @@ public class ResultsModel {
 		this.simulator.setSeqStops(value);
 		this.UpdateViews();
 	}
+	
+	public void setCreateSpinTable(boolean value) {
+		this.createSpinTable = value;
+	}
+	
+	public void setGenAllBonusSpin(boolean value) {
+		this.genAllBonusSpins = value;
+	}
 
 	public void setGenAllNumLines(short value) {
 		this.genallnumlines = value;
@@ -296,6 +308,10 @@ public class ResultsModel {
 
 	public String getReelMappingsDBTableName() {
 		return this.buildDBTableName(ResultsModel.REELMAPPINGS_TABLE_NAME);
+	}
+	
+	public String getLossPercentageDBTableName() {
+		return this.buildDBTableName(ResultsModel.LOSS_PER_TABLE_NAME);
 	}
 
 	public String getOutputLogFilePath() {
@@ -501,6 +517,7 @@ public class ResultsModel {
 		Thread t = new Thread() {
 			public void run() {
 				int total_freespin = 0;
+				int extra_freespin = 0;
 				boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 				Result pre_result = null;
 				
@@ -601,6 +618,7 @@ public class ResultsModel {
 					try {
 						ResultsModel.this.currblock = ResultsModel.this.blocks
 								.get(ResultsModel.this.currblockindex);
+						ResultsModel.this.currlpe = new LossPercentageEntry(ResultsModel.this.currblock);
 						
 						while (ResultsModel.this.currblock != null
 								&& !ResultsModel.this.cancelled) {
@@ -634,21 +652,23 @@ public class ResultsModel {
 										total_freespin += r.freespinsawarded;
 									
 										// Check if the number of free spins awarded exceeds the allowed
-										if (total_freespin > 200) {
-											int extras = 200 - (total_freespin - r.freespinsawarded);
-											ResultsModel.this.addFreeSpins(extras);
-										} else {
-											ResultsModel.this.addFreeSpins(r.freespinsawarded);
-										}
+										if (total_freespin > 200) 
+											extra_freespin = 200 - (total_freespin - r.freespinsawarded);
+										else 
+											extra_freespin = r.freespinsawarded;
+											
+										ResultsModel.this.addFreeSpins(extra_freespin);
 									}
 									
 									// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
-									if (orign_mode && r.bonusactivated) {
-										ts += r.freespinsawarded;
+									if (orign_mode || ResultsModel.this.genAllBonusSpins && r.bonusactivated) {
+										ts += extra_freespin;
 										ResultsModel.this.setTotalSpins(ts);
 										ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
-										.addNumSpins(r.freespinsawarded);
+										.addNumSpins(extra_freespin);
 										ResultsModel.this.simulator.setSeqStops(false);
+										ResultsModel.this.currlpe.incrementNumFreeSpins(extra_freespin);
+										extra_freespin = 0;
 									}
 									
 									if (ResultsModel.this.bonusactive) {
@@ -665,20 +685,28 @@ public class ResultsModel {
 										ResultsModel.this.updateLDWLosses(r.isLDWLose(), pre_result);
 										
 										// Insert previous spin result into the database
-										Database.insertIntoTable(ResultsModel.this
-												.getSpinResultsDBTableName(), pre_result);
+										if (ResultsModel.this.createSpinTable)
+											Database.insertIntoTable(ResultsModel.this
+													.getSpinResultsDBTableName(), pre_result);
 									}
 
 									ResultsModel.this.incrementCurrSpin();
+									
+									// Update the LossPercentageTable entry
+									ResultsModel.this.updateLPE(r);
+									// TODO add in the bonus spins 
+									
 									pre_result = r;
 									
 									// If one block or one blockrepeat is done
 									if (ResultsModel.this.ldwResetRequired) {
-										//TODO add insertion to the loss_percentage table
 										pre_result.setLDWWins(ResultsModel.this.wins);
 										pre_result.setLDWLosses(ResultsModel.this.losses);
-										Database.insertIntoTable(ResultsModel.this
-												.getSpinResultsDBTableName(), pre_result);
+										
+										if (ResultsModel.this.createSpinTable)
+											Database.insertIntoTable(ResultsModel.this
+													.getSpinResultsDBTableName(), pre_result);
+										
 										ResultsModel.this.ldwResetRequired = false;
 									}
 								} else {
@@ -691,14 +719,15 @@ public class ResultsModel {
 								}
 							}
 						}
-						//TODO look at this
+
 						// Insert the last spin results into the database
 						if (pre_result != null) {
 							pre_result.setLDWWins(ResultsModel.this.wins);
 							pre_result.setLDWLosses(ResultsModel.this.losses);
 							
-							Database.insertIntoTable(ResultsModel.this
-									.getSpinResultsDBTableName(), pre_result);
+							if (ResultsModel.this.createSpinTable)
+								Database.insertIntoTable(ResultsModel.this
+										.getSpinResultsDBTableName(), pre_result);
 							}
 						
 						// Update the base & bonus hit counts
@@ -839,6 +868,7 @@ public class ResultsModel {
 				this.currblock.currspin = 0;
 				this.ldwResetRequired = true;
 				this.repeatComplete = true;
+				this.currblock.resetNumOfSpins();
 			} else { // If the currblock is done
 				this.currblockindex++;
 				this.blockComplete = true;
@@ -856,6 +886,53 @@ public class ResultsModel {
 		}
 
 		this.UpdateViews();
+	}
+	
+	protected void updateLPE(Result r) {
+		// update the balance after each spin
+		if (this.bonusactive)
+			currlpe.setBalance(r.creditswon);
+		else
+			currlpe.setBalance(r.creditswon - currlpe.getBet());
+		
+		// update win/lose and ldws 
+		if (r.creditswon > 0) {
+			if ((r.creditswon - currlpe.getBet()) >= 0)
+				currlpe.incrementWin();
+			else {
+				currlpe.incrementLdw();
+				currlpe.incrementLoss();
+			}
+		} else 
+			currlpe.incrementLoss();
+		
+		
+		
+		// if one repeat is completed
+		if (this.repeatComplete) {
+			currlpe.updateLossPercentage();
+			currlpe.incrementCurBalanceIndex();
+			this.repeatComplete = false;
+		}
+		
+		// if one block is completed
+		if (this.blockComplete) {
+			currlpe.calculateAvgBalance();
+			currlpe.calculateSD();
+			currlpe.updateLossPercentage();
+			
+			try {
+				Database.insertIntoTable(this.getLossPercentageDBTableName(), currlpe, this.blocks.size());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			if (currblockindex < this.blocks.size())
+				currlpe = new LossPercentageEntry(this.blocks.get(currblockindex));
+			this.blockComplete = false;
+		}
+		//TODO implement method
+		
 	}
 
 //	protected void incrementConsumed() {
@@ -1604,8 +1681,8 @@ public class ResultsModel {
 			this.bonusspin = value;
 		}
 
-		public void setFreeSpinsAwarded(short value) {
-			this.freespinsawarded = value;
+		public void addFreeSpinsAwarded(short value) {
+			this.freespinsawarded += value;
 		}
 
 		public void setFreeStormWinAmounts(ArrayList<Integer> value) {
@@ -1692,6 +1769,7 @@ public class ResultsModel {
 			return this.bonusspin;
 		}
 		
+		//TODO confirm the definition of the following two
 		public boolean isLDWWin() {
 			return this.creditswon > 0;
 		}
@@ -1700,7 +1778,7 @@ public class ResultsModel {
 			if (ResultsModel.this.bonusactive)
 				return true;
 			else
-				return (this.creditswon - this.linebet * this.numlines) > 0;
+				return (this.creditswon - this.linebet * this.numlines) >= 0;
 		}
 
 		public short getFreeSpinsAwarded() {
@@ -1750,17 +1828,64 @@ public class ResultsModel {
 
 	public class LossPercentageEntry {
 		private int numspins = 0;
-		private int numline = 0;
+		private short numline = 0;
+		private int numfreespins = 0;
+		private long blocknum = 0;
+		private int bet = 0;
 		private int loss = 0;
 		private int ldw = 0;
 		private int win = 0;
-		private int balance = 0;
+		
+		private long initialbalance = 0;
+		private long avgbalance = 0;
+		private int curBalanceIndex = 0;
+		
+		private int repeats = 0;
+		private double sd = 0;
 		
 		private ArrayList<Integer> losspercentages = new ArrayList<Integer>();
-
-		public LossPercentageEntry() {
-			for(int i = 0; i < 8; i++)
+		private ArrayList<Long> balances = new ArrayList<Long>();
+		private ArrayList<Range> ranges = new ArrayList<Range>();
+		//TODO add fields if needed
+		
+		public LossPercentageEntry(Block currblock) {
+			this.numspins = currblock.getNumSpins();
+			this.numline = currblock.getNumLines();
+			this.blocknum = currblock.getBlockNumber();
+			this.repeats = currblock.getNumRepeats();
+			
+			this.bet = currblock.getNumLines() * currblock.getLineBet();
+			this.curBalanceIndex = 0;
+			
+			this.initialbalance = numspins * numline * currblock.getLineBet();
+			
+			// populate the balance array
+			for(int i = 0; i < this.repeats; i++) 
+				this.balances.add(initialbalance);
+			
+			// populate the loss percentage range check array
+			double percent = 1;
+			boolean push = true;
+			while (percent >= -9) {
+				if (percent == 0 && push) {
+					ranges.add(new Range(0, 0));
+					push = false;
+				}
+				else if (percent == -9) {
+					ranges.add(new Range(-9, -9));
+					percent -= 0.25;
+				}
+				else {
+					ranges.add(new Range(percent - 0.25, percent));
+					percent -= 0.25;
+				}
+			}
+			
+			// populate the loss percentage array
+			for(int i = 0; i < ranges.size(); i++)
 				this.losspercentages.add(0);
+			
+			
 		}
 		
 		public int getNumSpins() {
@@ -1771,54 +1896,166 @@ public class ResultsModel {
 			this.numspins = numspins;
 		}
 
-		public int getNumLine() {
+		public short getNumLine() {
 			return numline;
 		}
 
-		public void setNumLine(int numline) {
+		public void setNumLine(short numline) {
 			this.numline = numline;
+		}
+		
+		public long getBlockNum() {
+			return this.blocknum;
 		}
 
 		public int getLoss() {
 			return loss;
 		}
 
-		public void setLoss(int loss) {
-			this.loss = loss;
+		public void incrementLoss() {
+			this.loss++;
 		}
 
 		public int getLdw() {
 			return ldw;
 		}
 
-		public void setLdw(int ldw) {
-			this.ldw = ldw;
+		public void incrementLdw() {
+			this.ldw++;
 		}
 
 		public int getWin() {
 			return win;
 		}
 
-		public void setWin(int win) {
-			this.win = win;
+		public double getSd() {
+			return sd;
 		}
 
-		public int getBalance() {
-			return balance;
+		private void calculateSD() {
+			double sdbalance = 0;
+			
+			for (long b : this.balances)
+				sdbalance += (double)(avgbalance - b) * (double)(avgbalance - b);
+			
+			sdbalance /= this.balances.size();
+			this.sd = Math.sqrt(sdbalance);
 		}
 
-		public void setBalance(int balance) {
-			this.balance = balance;
+		public void incrementWin() {
+			this.win++;
+		}
+		
+		public void incrementCurBalanceIndex() {
+			this.curBalanceIndex++;
+		}
+
+		public void setBalance(int value) {
+			this.balances.set(curBalanceIndex, balances.get(curBalanceIndex) + value);
 		}
 		
 		public int getLossPercentage(int index) {
 			return this.losspercentages.get(index);
 		}
 		
-		public void addToLossPercentage(int index) {
+		public ArrayList<Integer> getLossPercentages() {
+			return this.losspercentages;
+		}
+		
+		public int getBet() {
+			return this.bet;
+		}
+		
+		public void setLossPercentage(int index) {
 			this.losspercentages.set(index, this.losspercentages.get(index) + 1);
 		}
 		
+		public void calculateAvgBalance() {
+			this.avgbalance = avgBalance();
+		}
+		
+		public long getAvgBalance() {
+			return this.avgbalance;
+		}
+		
+		public int avgBalance() {
+			int totalbalance = 0;
+			
+			for (long l : this.balances)
+				totalbalance += l;
+			
+			return totalbalance/this.repeats;
+		}
+		
+		//TODO calculate the loss percentage at the end of each repeat
+		public void updateLossPercentage() {
+			double losspercentage;
+			DecimalFormat df = new DecimalFormat("#.########");
+			
+			losspercentage = (initialbalance - balances.get(curBalanceIndex))
+					/ (double)initialbalance;
+			losspercentage = Double.valueOf(df.format(losspercentage));
+			
+			for (int i = 0; i < this.ranges.size(); i++) {
+				boolean isInRange = ranges.get(i).isInRange(losspercentage);
+				
+				if (isInRange) {
+					this.setLossPercentage(i);
+					break;
+				}
+					
+			}
+			
+		}
+
+		public int getNumFreeSpins() {
+			return numfreespins;
+		}
+
+		public void incrementNumFreeSpins(int numfreespins) {
+			this.numfreespins += numfreespins;
+		}
+		
+		public class Range {
+			public double low = 0;
+			public double high = 0;
+			
+			public Range (double l, double h) {
+				this.low = l;
+				this.high = h;
+			}
+			
+			public boolean isInRange(double percentage) {
+				if (high == 1)
+					return (percentage <= high && percentage >= low);
+				// when loss percentage is between (0, 0.75]
+				else if (low > 0)
+					return (percentage < high && percentage >= low);
+				
+				// when loss percentage is [-9, infinity)
+				else if (low == -9 && high == -9)
+					return (percentage <= low);
+				
+				// when loss percentage is between (0, -9)
+				else if (high < 0)
+					return (percentage <= high && percentage > low);
+				
+				// when loss percentage = 0
+				else if (low == 0 && high == 0)
+					return percentage == high;
+				
+				// when loss percentage is between (-0.25, 0.25)/0
+				else if (low == 0 || high == 0)
+					return (percentage < high && percentage > low);
+				
+				else return false;
+					
+			}
+		}
+
+		public ArrayList<Range> getRangeArray() {
+			return this.ranges;
+		}
 		
 	}
 	
@@ -1860,11 +2097,17 @@ public class ResultsModel {
 		private short linebet = 1;
 		private short denomination = 1;
 		private int numspins = 0;
+		private int initialspins = 0;
 		private int repeats = 1;
 		private int currspin = 0;
 		private long blockNumber = 0;
 		
 		public Block() {
+		}
+
+		public void resetNumOfSpins() {
+			this.numspins = this.initialspins;
+			
 		}
 
 		public void addNumSpins(int value) {
@@ -1890,6 +2133,7 @@ public class ResultsModel {
 
 		public void setNumSpins(int value) {
 			this.numspins = value;
+			this.initialspins = value;
 		}
 
 		public void setRepeats(int value) {
@@ -2155,11 +2399,11 @@ public class ResultsModel {
 				/* populate symbol set */
 
 // 				TEST: Cheat spin results here 				
-//				reelstop1 = (short)22;
-//				reelstop2 = (short)6;
-//				reelstop3 = (short)5;
-//				reelstop4 = (short)22;
-//				reelstop5 = (short)27;
+//				reelstop1 = (short)14;
+//				reelstop2 = (short)30;
+//				reelstop3 = (short)25;
+//				reelstop4 = (short)0;
+//				reelstop5 = (short)12;
 //				this.model.bonusactive = true;
 
 				populateSymbolSetColumn(reelstop1, REEL_ONE, this.model.reel1);
@@ -2312,7 +2556,7 @@ public class ResultsModel {
 									short freespins = this.getAwardedSpins(scatterwin);
 									scatterwin *= r.linebet;
 									r.setCreditsWon(r.getCreditsWon() + scatterwin);
-									r.setFreeSpinsAwarded(freespins);
+									r.addFreeSpinsAwarded(freespins);
 									r.setBonusActivated(true);
 								}
 								break;
@@ -2419,7 +2663,7 @@ public class ResultsModel {
 				if (sr.bestFreeStormPayout > 0) {
 					creditswon += sr.bestFreeStormPayout;
 					r.addFreeStormWinAmount(line, sr.bestFreeStormPayout);
-					r.setFreeSpinsAwarded(getAwardedSpins(sr.bestFreeStormPayout));
+					r.addFreeSpinsAwarded(getAwardedSpins(sr.bestFreeStormPayout));
 				} 
 			}
 			
@@ -2441,6 +2685,7 @@ public class ResultsModel {
 			r.setCreditsWon(r.getCreditsWon() + creditswon);
 		}
 		
+		// TODO check these code
 		// Used to determine the payout on Base and FSS Bonus wins in Base mode
 		private void calculateSimpleResult(PaytableEntry pe,
 				String winsequence, SimpleResult simpleResult) {

@@ -26,7 +26,7 @@ public class Main {
 		
 		JFrame f = new JFrame();
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setSize(800,700);
+		f.setSize(800,800);
 		f.setLocation( (int)(dim.width * 0.5 - f.getSize().width * 0.5), (int)(dim.height * 0.5 - f.getSize().height * 0.5));
 		f.setVisible(true);
 		f.setTitle("UW Sim Results Generator");

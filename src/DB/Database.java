@@ -15,6 +15,8 @@ import java.util.Map;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
+import uwsimresgen.model.ResultsModel.LossPercentageEntry;
+import uwsimresgen.model.ResultsModel.LossPercentageEntry.Range;
 import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
 import uwsimresgen.model.ResultsModel.Result;
@@ -66,6 +68,7 @@ public class Database {
 	private static final String URL_SHUTDOWN = "jdbc:derby:;shutdown=true";
 
 	private static Connection conn = null;
+	
 	private static ArrayList<String> listOfTables;
 	
 	private static final HashMap<String, String> PAR_MAPPING = new HashMap<String, String>() {
@@ -113,8 +116,10 @@ public class Database {
 	}
 
 	static PreparedStatement st = null;
-
+	static PreparedStatement lps = null;
+	
 	static int batchRequests = 0;
+	static int lpeBatchRequests = 0;
 
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {
@@ -302,7 +307,7 @@ public class Database {
 		if (!Database.doesTableExist(tableName)) {
 			String freeStormWin_CREDITS = "";
 			for (int i = 0; i < maxLines; i++) {
-				freeStormWin_CREDITS += ", FREESTORM" + i + "WIN_CREDITS smallint NOT NULL"; //change this to SCATTER_CREDITS
+				freeStormWin_CREDITS += ", FREESTORM" + i + "WIN_CREDITS smallint NOT NULL";
 			}
 			String lineWins_CREDITS = "";
 			for (int i = 0; i < maxLines; i++) {
@@ -442,9 +447,115 @@ public class Database {
 		}
 	}
 	
+	
+	public static void insertIntoTable(String tableName, LossPercentageEntry lpe, int blocksize) 
+			throws SQLException {
+		tableName = tableName.toUpperCase();
+		// Create table if does not exist
+		if (!Database.doesTableExist(tableName)) {
+			
+			String ranges = "";
+
+			if (lpe.getRangeArray() != null) {
+				for (int i = 0; i < lpe.getRangeArray().size(); i++) {
+					Range r = lpe.getRangeArray().get(i);
+					
+					if (i < 4)
+						ranges += ", LOSS" + (int)(r.high * 100) + "_" + (int)(r.low * 100) + " integer NOT NULL";
+					else if (i == 4)
+						ranges += ", MONEYBACK0 integer NOT NULL";
+					else if (i > 4 && i < lpe.getRangeArray().size() - 1)
+						ranges += ", WIN" + (int)(r.high * -100) + "_" + (int)(r.low * -100) + " integer NOT NULL";
+					else
+						ranges += ", WIN900UP integer NOT NULL";
+
+				}
+			}
+			
+			String query = "create table " + tableName 
+					+ " (BLOCKID bigint NOT NULL, "
+					+ "NUMOFSPINS integer NOT NULL, "
+					+ "NUMOFLINES smallint NOT NULL, "
+					+ "NUMOFFREESPIN integer NOT NULL, "
+					+ "AVGBALANCE integer NOT NULL, "
+					+ "SDBALANCE integer NOT NULL, "
+					+ "WINCOUNTS integer NOT NULL, "
+					+ "LOSSCOUNTS integer NOT NULL, "
+					+ "LDWS integer NOT NULL"
+					+ ranges + ")";
+			Database.createTable(tableName, query);
+		}
+		
+		String ranges = "";
+		String rangesQ = "";
+		if (lpe.getRangeArray() != null) {
+			for (int i = 0; i < lpe.getRangeArray().size(); i++) {
+				Range r = lpe.getRangeArray().get(i);
+				
+				if (i < 4)
+					ranges += ", LOSS" + (int)(r.high * 100) + "_" + (int)(r.low * 100);
+				else if (i == 4)
+					ranges += ", MONEYBACK0";
+				else if (i > 4 && i < lpe.getRangeArray().size() - 1)
+					ranges += ", WIN" + (int)(r.high * -100) + "_" + (int)(r.low * -100);
+				else 
+					ranges += ", WIN900UP";
+					
+				
+				rangesQ += ",?";
+			}
+		}
+		
+		// Otherwise, add the LossPercentageEntry to the table
+		String query = "insert into " + tableName
+				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVGBALANCE, SDBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
+				+ ranges + ") "
+				+ "values(?,?,?,?,?,?,?,?,?" + rangesQ + ")";
+		
+		try {
+			if (lps == null)
+				lps = conn.prepareStatement(query);
+			
+			int index = 10;
+			lps.setLong(1, lpe.getBlockNum());
+			lps.setInt(2, lpe.getNumSpins());
+			lps.setShort(3, lpe.getNumLine());
+			lps.setInt(4, lpe.getNumFreeSpins());
+			lps.setLong(5, lpe.getAvgBalance());
+			lps.setInt(6, (int)lpe.getSd());
+			lps.setInt(7, lpe.getWin());
+			lps.setInt(8, lpe.getLoss());
+			lps.setInt(9, lpe.getLdw());
+			
+			
+			for (int i = 0; i < lpe.getLossPercentages().size(); i++) {
+				lps.setInt(index, lpe.getLossPercentage(i));
+				index ++;
+			}
+
+			
+			lps.addBatch();
+			lpeBatchRequests++;
+			
+			if (lpeBatchRequests >= blocksize) {
+				lps.executeBatch();
+				lpeBatchRequests = 0;
+			}
+			
+			
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	
 	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
+		
+		if (!Database.doesTableExist(tableName)) {
+			System.err.println("Updating hit counts to " + tableName + " encountered error: table does not exist!\n");
+		}
+		
 		PreparedStatement update = null;
 		
 		String query = "update " + tableName 
@@ -478,6 +589,7 @@ public class Database {
 	public static void flushBatch() throws SQLException {
 		if (batchRequests > 0) {
 			batchRequests = 0;
+			
 			try {
 				st.executeBatch();
 				st = null;

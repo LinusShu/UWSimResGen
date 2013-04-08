@@ -61,6 +61,8 @@ public class HomeView extends JPanel implements IView  {
 	*/
 	
 	private JCheckBox genAllStopsCheckBox = new JCheckBox("Generate All Reel Stops?");
+	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
+	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
 	private JButton runButton = new JButton("Generate Results");
 	
 	private JLabel numlinesLabel = new JLabel("Number of Lines:");
@@ -157,17 +159,18 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridwidth = 1;
 		this.gbc.anchor = GridBagConstraints.EAST;
 		jp.add(numlinesLabel, gbc);
+		
 		this.gbc.gridx = 1;
 		this.gbc.gridy = 0;
 		this.gbc.gridwidth = 1;
 		this.gbc.anchor = GridBagConstraints.WEST;
 		jp.add(numlinesTF, gbc);		
+		
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 0;
 		this.gbc.gridwidth = 1;
 		this.gbc.anchor = GridBagConstraints.EAST;
-		
-		jp.add(genAllStopsCheckBox, gbc);			
+		jp.add(genAllStopsCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 5;
@@ -176,10 +179,18 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.insets.set(10, 0, 0, 0);
 		this.add(jp, gbc);			
 		
-		
-		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 6;
+		this.gbc.anchor = GridBagConstraints.EAST;
+		this.add(genAllBonusSpinsCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 7;
+		this.gbc.anchor = GridBagConstraints.EAST;
+		this.add(genNoTableCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 8;
 		this.gbc.gridwidth = 3;
 		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.gbc.anchor = GridBagConstraints.CENTER;
@@ -293,9 +304,6 @@ public class HomeView extends JPanel implements IView  {
 		});
 		
 		
-		
-		
-		
 		this.genAllStopsCheckBox.addItemListener(new ItemListener() {
 
 			@Override
@@ -304,6 +312,36 @@ public class HomeView extends JPanel implements IView  {
 					HomeView.this.model.setGenAllStops(true);
 				} else {
 					HomeView.this.model.setGenAllStops(false);
+				}
+				
+			}
+
+			
+		});
+		
+		this.genNoTableCheckBox.addItemListener(new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent arg0) {
+				if( arg0.getStateChange() == ItemEvent.SELECTED ) {
+					HomeView.this.model.setCreateSpinTable(false);
+				} else {
+					HomeView.this.model.setCreateSpinTable(true);
+				}
+				
+			}
+
+			
+		});
+		
+		this.genAllBonusSpinsCheckBox.addItemListener(new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent arg0) {
+				if( arg0.getStateChange() == ItemEvent.SELECTED ) {
+					HomeView.this.model.setGenAllBonusSpin(true);
+				} else {
+					HomeView.this.model.setGenAllBonusSpin(false);
 				}
 				
 			}
@@ -413,6 +451,8 @@ public class HomeView extends JPanel implements IView  {
 			this.selectFile.setEnabled(false);
 			this.blocksFile.setEnabled(false);
 			this.genAllStopsCheckBox.setEnabled(false);
+			this.genNoTableCheckBox.setEnabled(false);
+			this.genAllBonusSpinsCheckBox.setEnabled(false);
 			this.numlinesTF.setEnabled(false);
 			this.prefixButton.setEnabled(false);
 			this.dbnameButton.setEnabled(false);
@@ -424,6 +464,8 @@ public class HomeView extends JPanel implements IView  {
 			this.runButton.setEnabled(true);
 			this.selectFile.setEnabled(true);
 			this.genAllStopsCheckBox.setEnabled(true);
+			this.genNoTableCheckBox.setEnabled(true);
+			this.genAllBonusSpinsCheckBox.setEnabled(true);
 			this.prefixButton.setEnabled(true);
 			this.dbnameButton.setEnabled(true);
 			this.blocksFileTF.setEnabled(true);
@@ -438,7 +480,8 @@ public class HomeView extends JPanel implements IView  {
 				this.blocksFileTF.setEnabled(false);
 				this.numlinesTF.setEnabled(true);
 				this.numlinesLabel.setEnabled(true);
-				
+				this.genAllBonusSpinsCheckBox.setEnabled(false);
+				this.model.setGenAllBonusSpin(false);
 			} else {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
