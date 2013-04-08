@@ -25,41 +25,6 @@ import uwsimresgen.model.ResultsModel.WinType;
 
 public class Database {
 
-	// public static void main(String[] args) {
-	// try {
-	// String tableName = "TABLENAME";
-	// Database.createConnection();
-	// // Database.createTable(tableName);
-	// // Database.dropTable(tableName);
-	// Database.createTable(tableName);
-	// Result result = new ResultsModel().new Result();
-	// result.setReelStop1(1);
-	// result.setReelStop2(2);
-	// result.setReelStop3(3);
-	// result.setReelStop4(4);
-	// result.setReelStop5(5);
-	// result.setNumLines(6);
-	// result.setLineBet(7);
-	// result.setDenomination(8.5);
-	// result.setDollarsWon(9.4);
-	// result.setCreditsWon(10.10);
-	// result.setLinesWon(11);
-	// result.setScatter(true);
-	// result.setBonusActivated(true);
-	// result.setBonusSpin(false);
-	//
-	// Database.insertIntoTable(tableName, result);
-	//
-	// Database.shutdownConnection();
-	// } catch (Exception e) {
-	// if (e instanceof SQLException) {
-	// e.printStackTrace();
-	// } else {
-	// e.printStackTrace();
-	// }
-	// }
-	// }
-
 	public static String DEFAULT_DB_NAME = "UWResGenDB";
 
 	// Change me to modify the database name.
@@ -71,6 +36,7 @@ public class Database {
 	
 	private static ArrayList<String> listOfTables;
 	
+	@SuppressWarnings("serial")
 	private static final HashMap<String, String> PAR_MAPPING = new HashMap<String, String>() {
 		{
 			put("A", "F4");
@@ -90,6 +56,12 @@ public class Database {
 	};
 
 	private static int maxLines;
+	
+	static PreparedStatement st = null;
+	static PreparedStatement lps = null;
+	
+	static int batchRequests = 0;
+	static int lpeBatchRequests = 0;
 
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
@@ -114,12 +86,6 @@ public class Database {
 			listOfTables.add(rs.getString(3).toUpperCase());
 		}
 	}
-
-	static PreparedStatement st = null;
-	static PreparedStatement lps = null;
-	
-	static int batchRequests = 0;
-	static int lpeBatchRequests = 0;
 
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {
@@ -447,7 +413,6 @@ public class Database {
 		}
 	}
 	
-	
 	public static void insertIntoTable(String tableName, LossPercentageEntry lpe, int blocksize) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
@@ -477,7 +442,7 @@ public class Database {
 					+ "NUMOFSPINS integer NOT NULL, "
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "NUMOFFREESPIN integer NOT NULL, "
-					+ "AVGBALANCE integer NOT NULL, "
+					+ "AVGBALANCE double NOT NULL, "
 					+ "SDBALANCE integer NOT NULL, "
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
@@ -521,7 +486,7 @@ public class Database {
 			lps.setInt(2, lpe.getNumSpins());
 			lps.setShort(3, lpe.getNumLine());
 			lps.setInt(4, lpe.getNumFreeSpins());
-			lps.setLong(5, lpe.getAvgBalance());
+			lps.setDouble(5, lpe.getAvgBalance());
 			lps.setInt(6, (int)lpe.getSd());
 			lps.setInt(7, lpe.getWin());
 			lps.setInt(8, lpe.getLoss());
