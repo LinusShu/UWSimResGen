@@ -2,10 +2,11 @@
 <data>
 	<blocks>
 		<!-- block info
-			numlines - integer > 0
-			linebet - float > 0 
+			numlines - integer (0, 20]
+			linebet - integer > 0 unit is CREDITS 
 			denomination - integer > 0 ( note: you are specifying the number of cents as an integer value, ie: 1 represents 1 cent )
 			numspins - integer > 0
+			blockrepeats - integer > 0
 		-->	
 		
   
@@ -34,4 +35,20 @@
 		<block numlines="20" linebet="1" denomination="5" numspins="30000" blockrepeats="1000" />
 		
 	</blocks>
+	
+	<grblocks>
+		<!-- grblock: when grblocks is present, the normal blocks are not processed
+			numlines - integer (0, 20]
+			linebet - integer (0, 5]
+			bankroll - integer > 0 unit is DOLLARS
+			denomination - integer > 0 unit is CENTS
+			blockrepeats - integer > 0
+			Note: wager is numblines * linebet * denomination (CENTS)
+		-->
+		
+		<grblock numlines="1"  linebet="1" bankroll="100" denomination="100" blockrepeats="1000" />
+		<grblock numlines="10" linebet="1" bankroll="100" denomination="10" blockrepeats="1000" />
+		<grblock numlines="20" linebet="1" bankroll="100" denomination="5" blockrepeats="1000" />
+		
+	</grblocks>
 </data>

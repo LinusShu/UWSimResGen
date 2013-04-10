@@ -16,9 +16,9 @@ import java.util.Map;
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
 import uwsimresgen.model.ResultsModel.LossPercentageEntry;
-import uwsimresgen.model.ResultsModel.LossPercentageEntry.Range;
 import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
+import uwsimresgen.model.ResultsModel.Range;
 import uwsimresgen.model.ResultsModel.Result;
 import uwsimresgen.model.ResultsModel.Symbol;
 import uwsimresgen.model.ResultsModel.WinType;
@@ -442,8 +442,8 @@ public class Database {
 					+ "NUMOFSPINS integer NOT NULL, "
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "NUMOFFREESPIN integer NOT NULL, "
-					+ "AVGBALANCE double NOT NULL, "
-					+ "SDBALANCE integer NOT NULL, "
+					+ "AVG_LOSSBALANCE double NOT NULL, "
+					+ "SD_LOSSBALANCE integer NOT NULL, "
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
 					+ "LDWS integer NOT NULL"
@@ -473,7 +473,7 @@ public class Database {
 		
 		// Otherwise, add the LossPercentageEntry to the table
 		String query = "insert into " + tableName
-				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVGBALANCE, SDBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
+				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVG_LOSSBALANCE, SD_LOSSBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
 				+ ranges + ") "
 				+ "values(?,?,?,?,?,?,?,?,?" + rangesQ + ")";
 		
@@ -486,7 +486,7 @@ public class Database {
 			lps.setInt(2, lpe.getNumSpins());
 			lps.setShort(3, lpe.getNumLine());
 			lps.setInt(4, lpe.getNumFreeSpins());
-			lps.setDouble(5, lpe.getAvgBalance());
+			lps.setDouble(5, lpe.getAvgLossBalance());
 			lps.setInt(6, (int)lpe.getSd());
 			lps.setInt(7, lpe.getWin());
 			lps.setInt(8, lpe.getLoss());

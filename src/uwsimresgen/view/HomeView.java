@@ -3,6 +3,7 @@ package uwsimresgen.view;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,15 +13,15 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
-
-import DB.Database;
 
 import uwsimresgen.model.ResultsModel;
 
@@ -63,8 +64,15 @@ public class HomeView extends JPanel implements IView  {
 	private JCheckBox genAllStopsCheckBox = new JCheckBox("Generate All Reel Stops?");
 	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
 	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
-	private JButton runButton = new JButton("Generate Results");
+	private JCheckBox genGamblersRuinCheckBox = new JCheckBox("Simulate Gamblers Ruin Scenario");
 	
+	private JLabel simulatorMode = new JLabel("Simulator Mode:");
+	private JRadioButton genRandomSpins = new JRadioButton("Random Spins");
+	private JRadioButton genAllStops = new JRadioButton("All Reel Stops");
+	private JRadioButton genGamblersRuin = new JRadioButton("Gamblers Ruin");
+	
+	private JButton runButton = new JButton("Generate Results");
+
 	private JLabel numlinesLabel = new JLabel("Number of Lines:");
 	private JTextField numlinesTF = new JTextField(5);
 	
@@ -148,7 +156,7 @@ public class HomeView extends JPanel implements IView  {
 		
 		
 		
-			
+		// TODO reorganize the layouts here	
 		JPanel jp = new JPanel();
 		jp.setLayout(new GridBagLayout());
 		
@@ -189,8 +197,59 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.anchor = GridBagConstraints.EAST;
 		this.add(genNoTableCheckBox, gbc);
 		
+		/*
+		JPanel optionsPan = new JPanel();
+		optionsPan.setLayout(new GridBagLayout());
+		
+		ButtonGroup modeButtons = new ButtonGroup();
+		modeButtons.add(genRandomSpins);
+		modeButtons.add(genAllStops);
+		modeButtons.add(genGamblersRuin);
+
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 0;
+		this.gbc.anchor = GridBagConstraints.PAGE_START;
+		this.gbc.insets.set(0, 0, 0, 0);
+		optionsPan.add(simulatorMode, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 1;
+		this.gbc.anchor = GridBagConstraints.LINE_START;
+		this.gbc.insets.set(10, 10, 0, 0);
+		optionsPan.add(genRandomSpins, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 2;
+		this.gbc.anchor = GridBagConstraints.LINE_START;
+		this.gbc.insets.set(5, 10, 0, 0);
+		optionsPan.add(genAllStops, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 3;
+		this.gbc.anchor = GridBagConstraints.LINE_START;
+		this.gbc.insets.set(5, 10, 0, 0);
+		optionsPan.add(genGamblersRuin, gbc);
+		
+		this.gbc.gridx = 1;
+		this.gbc.gridy = 0;
+		this.gbc.anchor = GridBagConstraints.FIRST_LINE_END;
+		this.gbc.gridwidth = 3;
+		this.gbc.fill = GridBagConstraints.HORIZONTAL;
+		this.gbc.insets.set(0, 0, 0, 0);
+		optionsPan.add(genAllBonusSpinsCheckBox);
+		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 8;
+		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.insets.set(0, 0, 0, 0);
+		this.add(optionsPan, gbc);*/
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 8;
+		this.gbc.anchor = GridBagConstraints.EAST;
+		this.add(genGamblersRuinCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 9;
 		this.gbc.gridwidth = 3;
 		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.gbc.anchor = GridBagConstraints.CENTER;
@@ -349,6 +408,21 @@ public class HomeView extends JPanel implements IView  {
 			
 		});
 		
+		this.genGamblersRuinCheckBox.addItemListener(new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent arg0) {
+				if( arg0.getStateChange() == ItemEvent.SELECTED ) {
+					HomeView.this.model.setGenGamblersRuin(true);
+				} else {
+					HomeView.this.model.setGenGamblersRuin(false);
+				}
+				
+			}
+
+			
+		});
+		
 		this.numlinesTF.addFocusListener(new FocusListener() {
 
 			@Override
@@ -453,6 +527,7 @@ public class HomeView extends JPanel implements IView  {
 			this.genAllStopsCheckBox.setEnabled(false);
 			this.genNoTableCheckBox.setEnabled(false);
 			this.genAllBonusSpinsCheckBox.setEnabled(false);
+			this.genGamblersRuinCheckBox.setEnabled(false);
 			this.numlinesTF.setEnabled(false);
 			this.prefixButton.setEnabled(false);
 			this.dbnameButton.setEnabled(false);
@@ -466,6 +541,7 @@ public class HomeView extends JPanel implements IView  {
 			this.genAllStopsCheckBox.setEnabled(true);
 			this.genNoTableCheckBox.setEnabled(true);
 			this.genAllBonusSpinsCheckBox.setEnabled(true);
+			this.genGamblersRuinCheckBox.setEnabled(true);
 			this.prefixButton.setEnabled(true);
 			this.dbnameButton.setEnabled(true);
 			this.blocksFileTF.setEnabled(true);
@@ -481,7 +557,25 @@ public class HomeView extends JPanel implements IView  {
 				this.numlinesTF.setEnabled(true);
 				this.numlinesLabel.setEnabled(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
-				this.model.setGenAllBonusSpin(false);
+				this.genGamblersRuinCheckBox.setEnabled(false);
+			} else if (this.model.getGenGamblersRuin()) {
+				this.blocksFile.setEnabled(true);
+				this.blocksFileLabel.setEnabled(true);
+				this.blocksFileTF.setEnabled(true);
+				this.numlinesTF.setEnabled(false);
+				this.numlinesLabel.setEnabled(false);
+				this.genAllStopsCheckBox.setEnabled(false);
+				this.genNoTableCheckBox.setEnabled(true);
+				this.genAllBonusSpinsCheckBox.setEnabled(false);
+			} else if (this.model.getGenAllBonusSpin()) {
+				this.blocksFile.setEnabled(true);
+				this.blocksFileLabel.setEnabled(true);
+				this.blocksFileTF.setEnabled(true);
+				this.numlinesTF.setEnabled(false);
+				this.numlinesLabel.setEnabled(false);
+				this.genAllStopsCheckBox.setEnabled(false);
+				this.genNoTableCheckBox.setEnabled(true);
+				this.genGamblersRuinCheckBox.setEnabled(false);
 			} else {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
