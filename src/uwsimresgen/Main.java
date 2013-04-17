@@ -33,13 +33,21 @@ public class Main {
 		f.getContentPane().setBackground(Color.WHITE);
 		f.getContentPane().setLayout(new BorderLayout());
 		
-		ResultsModel model = new ResultsModel();
+		final ResultsModel model = new ResultsModel();
 		HomeView view = new HomeView(model);
 		ProcessingView view2 = new ProcessingView(model);
 		
 		f.getContentPane().add(view, BorderLayout.CENTER);
 		f.getContentPane().add(view2, BorderLayout.SOUTH);
 		f.getContentPane().validate();
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				System.out.println("Shutting Down");
+				model.shutdown();
+			}
+		});
+		
 	}
 
 }

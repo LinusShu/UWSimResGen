@@ -84,6 +84,7 @@ public class ResultsModel {
 	private ArrayList<PaytableEntry> basepaytable = new ArrayList<PaytableEntry>();
 	private ArrayList<PaytableEntry> bonuspaytable = new ArrayList<PaytableEntry>();
 	private ArrayList<Integer> basescatterpaytable = new ArrayList<Integer>(); 
+	private ArrayList<Integer> bonusspincounts = new ArrayList<Integer>();
 	private HashMap<String, ArrayList<Integer>> bonuscatterpaytable = new HashMap<String, ArrayList<Integer>>();
 	private HashMap<SimpleEntry<String, Integer>, Integer> basehittable = new HashMap<SimpleEntry<String, Integer>, Integer>();
 	private HashMap<SimpleEntry<String, Integer>, Integer> bonushittable = new HashMap<SimpleEntry<String, Integer>, Integer>();
@@ -105,7 +106,7 @@ public class ResultsModel {
 	private boolean paused = false;
 	private boolean error = false;
 	
-	private boolean ldwResetRequired = false;
+	private boolean ldwResetRequired = true;
 	private boolean repeatComplete = false;
 	private boolean blockComplete = false;
 	private boolean genAllBonusSpins = false;
@@ -150,6 +151,9 @@ public class ResultsModel {
 		this.simulator = new Simulator(this);
 		this.outputLog = new OutputLog("log");
 		this.random = new Random();
+		
+		for (int i = 0; i < 9; i++) 
+			this.bonusspincounts.add(0);
 	}
 
 	public void AddView(IView view) {
@@ -260,12 +264,20 @@ public class ResultsModel {
 		return this.genAllBonusSpins;
 	}
 	
+	public GRBlock getCurrGRBlock() {
+		return this.currgrblock;
+	}
+	
 	public boolean getCreateSpinTable() {
 		return this.createSpinTable;
 	}
 	
 	public int getCurrSpin() {
 		return this.currspin;
+	}
+	
+	public double getCurrBalance() {
+		return this.currgrblock.getCurrBalance();
 	}
 
 	public int getWins() {
@@ -288,6 +300,56 @@ public class ResultsModel {
 		return this.bonuscatterpaytable.get(key).get(index);
 	}
 	
+	public int getBonusSpinCounts(int index) {
+		return bonusspincounts.get(index);
+	}
+
+	public void incrementBonusSpinCounts(int index) {
+		this.bonusspincounts.set(index, bonusspincounts.get(index) + 1);
+	}
+	
+	public void updateBonusSpinCounts(short freespins) {
+		switch (freespins) {
+		
+		case 3:
+			incrementBonusSpinCounts(0);
+			break;
+			
+		case 6:
+			incrementBonusSpinCounts(1);
+			break;
+			
+		case 10:
+			incrementBonusSpinCounts(2);
+			break;
+			
+		case 13:
+			incrementBonusSpinCounts(3);
+			break;
+			
+		case 15:
+			incrementBonusSpinCounts(4);
+			break;
+			
+		case 18:
+			incrementBonusSpinCounts(5);
+			break;
+		
+		case 20:
+			incrementBonusSpinCounts(6);
+			break;
+			
+		case 25:
+			incrementBonusSpinCounts(7);
+			break;
+			
+		default:
+			incrementBonusSpinCounts(8);
+			break;
+				
+		}
+	}
+
 	public File getConfigFile() {
 		return this.configfile;
 	}
@@ -557,7 +619,87 @@ public class ResultsModel {
 	}
 
 	/* PRODUCER */
+    
+	protected void initializeDBTables() {
+		try {
+			Database.createConnection();
+			Database.setMaxLines(ResultsModel.this.paylines.size());
 
+			// Add symbols to the database
+			if (ResultsModel.this.symbols != null
+					&& ResultsModel.this.symbols.size() > 0) {
+				for (int i = 0; i < ResultsModel.this.symbols
+						.size(); i++) {
+					Symbol symbol = ResultsModel.this.symbols
+							.get(i);
+					symbol.setID(i);
+					Database.insertIntoTable(
+							getSymbolsDBTableName(), symbol);
+				}
+				Database.flushBatch();
+			}
+
+			if (ResultsModel.this.blocks != null
+					&& ResultsModel.this.blocks.size() > 0) {
+				for (int i = 0; i < ResultsModel.this.blocks.size(); i++) {
+					Block block = ResultsModel.this.blocks.get(i);
+					block.setBlockNumber(i + 1);
+					Database.insertIntoTable(getBlockDBTableName(),
+							block);
+				}
+				Database.flushBatch();
+			}
+
+			if (ResultsModel.this.paylines != null
+					&& ResultsModel.this.paylines.size() > 0) {
+				for (int i = 0; i < ResultsModel.this.paylines
+						.size(); i++) {
+					Payline payline = ResultsModel.this.paylines
+							.get(i);
+					payline.setNumber(i);
+					Database.insertIntoTable(
+							getPaylinesDBTableName(), payline);
+				}
+				Database.flushBatch();
+			}
+
+			if (ResultsModel.this.basepaytable != null
+					&& ResultsModel.this.basepaytable.size() > 0) {
+				for (int i = 0; i < ResultsModel.this.basepaytable
+						.size(); i++) {
+					PaytableEntry paytableEntry = ResultsModel.this.basepaytable
+							.get(i);
+					paytableEntry.setEntryID(i + 1);
+					Database.insertIntoTable(
+							getBasePaytableDBTableName(),
+							paytableEntry);
+				}
+				Database.flushBatch();
+			}
+			
+			if (ResultsModel.this.bonuspaytable != null
+					&& ResultsModel.this.bonuspaytable.size() > 0) {
+				for (int i = 0; i < ResultsModel.this.bonuspaytable
+						.size(); i++) {
+					PaytableEntry paytableEntry = ResultsModel.this.bonuspaytable
+							.get(i);
+					paytableEntry.setEntryID(i + 1);
+					Database.insertIntoTable(
+							getBonusPaytableDBTableName(),
+							paytableEntry);
+				}
+				Database.flushBatch();
+			}
+
+		} catch (Exception e) {
+			ResultsModel.this.setError();
+			ResultsModel.this.outputLog
+					.outputStringAndNewLine("ERROR: Failed to connect to database. Message="
+							+ e.getMessage());
+		}
+		
+	}
+	
 	private void produce() {
 		Thread t = new Thread() {
 			public void run() {
@@ -586,135 +728,14 @@ public class ResultsModel {
 				
 				// Create Symbols, Blocks, and paytables DB tables
 				if (ts > 0 || ResultsModel.this.genGamblersRuin) {
+					initializeDBTables();
+					
 
 					try {
-						Database.createConnection();
-						Database.setMaxLines(ResultsModel.this.paylines.size());
-
-						// Add symbols to the database
-						if (ResultsModel.this.symbols != null
-								&& ResultsModel.this.symbols.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.symbols
-									.size(); i++) {
-								Symbol symbol = ResultsModel.this.symbols
-										.get(i);
-								symbol.setID(i);
-								Database.insertIntoTable(
-										getSymbolsDBTableName(), symbol);
-							}
-							Database.flushBatch();
-						}
-
-						if (ResultsModel.this.blocks != null
-								&& ResultsModel.this.blocks.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.blocks.size(); i++) {
-								Block block = ResultsModel.this.blocks.get(i);
-								block.setBlockNumber(i + 1);
-								Database.insertIntoTable(getBlockDBTableName(),
-										block);
-							}
-							Database.flushBatch();
-						}
-
-						if (ResultsModel.this.paylines != null
-								&& ResultsModel.this.paylines.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.paylines
-									.size(); i++) {
-								Payline payline = ResultsModel.this.paylines
-										.get(i);
-								payline.setNumber(i);
-								Database.insertIntoTable(
-										getPaylinesDBTableName(), payline);
-							}
-							Database.flushBatch();
-						}
-
-						if (ResultsModel.this.basepaytable != null
-								&& ResultsModel.this.basepaytable.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.basepaytable
-									.size(); i++) {
-								PaytableEntry paytableEntry = ResultsModel.this.basepaytable
-										.get(i);
-								paytableEntry.setEntryID(i + 1);
-								Database.insertIntoTable(
-										getBasePaytableDBTableName(),
-										paytableEntry);
-							}
-							Database.flushBatch();
-						}
-						
-						if (ResultsModel.this.bonuspaytable != null
-								&& ResultsModel.this.bonuspaytable.size() > 0) {
-							for (int i = 0; i < ResultsModel.this.bonuspaytable
-									.size(); i++) {
-								PaytableEntry paytableEntry = ResultsModel.this.bonuspaytable
-										.get(i);
-								paytableEntry.setEntryID(i + 1);
-								Database.insertIntoTable(
-										getBonusPaytableDBTableName(),
-										paytableEntry);
-							}
-							Database.flushBatch();
-						}
-
-					} catch (Exception e) {
-						ResultsModel.this.setError();
-						ResultsModel.this.outputLog
-								.outputStringAndNewLine("ERROR: Failed to connect to database. Message="
-										+ e.getMessage());
-					}
-
-					try {
-						// TODO maybe refactor this into a State/Strategy pattern???
+						//TODO add stuff here
 						// If in GamblersRuin mode
 						if (ResultsModel.this.genGamblersRuin) {
-							ResultsModel.this.currgrblock = ResultsModel.this.grblocks.get(ResultsModel.this.currblockindex);
-							ResultsModel.this.currgre = new GamblersRuinEntry();
-							
-							while (ResultsModel.this.currgrblock != null
-									&& !ResultsModel.this.cancelled) {
-								
-								if (!ResultsModel.this.paused) {
-									// Check/update if still in bonus state
-									ResultsModel.this.checkBonusState();
-									// Reset total free spin count when no longer in bonus state
-									if (!ResultsModel.this.bonusactive) 
-										total_freespin = 0;
-									
-									// Simulate spin
-									Result r = ResultsModel.this.simulator.simulateSpin();
-									
-									if (r != null) {
-										// Set record numbers of the result
-										r.setRecordNumber(ResultsModel.this.getCurrSpin() + 1);
-										r.setBlockNumber(ResultsModel.this.currgrblock.getBlockNum());
-										r.setRepeatNumber(ResultsModel.this.currblockrepeat);
-										
-										// If there are free spins awarded from the spin
-										if (r.freespinsawarded > 0) {
-											total_freespin += r.freespinsawarded;
-											
-											// Check if the number of free spins awarded exceeds the allowed
-											if (total_freespin > ResultsModel.this.MAX_FREESPINS) 
-												extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
-											else 
-												extra_freespin = r.freespinsawarded;
-											
-											// add free spins 
-											ResultsModel.this.addFreeSpins(extra_freespin);
-											currgre.addNumFreeSpins(extra_freespin);
-											
-											// if the free spins are awarded in bonus mode
-											if (r.bonusspin) 
-												currgre.addNumExtraFreeSpins(extra_freespin);
-										}
-										
-										ResultsModel.this.incrementGRCurrSpin(r);
-									} // if spin result is not valid
-								} // if paused
-							} // while all grblocks finished 
-							
-							//TODO GamblersRuin main flow here
+							doGamblersRuinMode();
 						// If not in GamblersRuin mode	
 						} else {
 							ResultsModel.this.currblock = ResultsModel.this.blocks
@@ -751,15 +772,21 @@ public class ResultsModel {
 										// If there are free spins awarded
 										if (r.freespinsawarded > 0) { 
 											total_freespin += r.freespinsawarded;
-										
+											
 											// Check if the number of free spins awarded exceeds the allowed
 											if (total_freespin > ResultsModel.this.MAX_FREESPINS) 
 												extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
 											else 
 												extra_freespin = r.freespinsawarded;
-												
+											
+											// Update the BonusHitCounts list if not in bonus mode
+											if (!r.bonusspin)
+												ResultsModel.this.updateBonusSpinCounts(r.freespinsawarded);
+											
+											
 											ResultsModel.this.addFreeSpins(extra_freespin);
 										}
+										
 										
 										// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
 										if (orign_mode || ResultsModel.this.genAllBonusSpins && r.bonusactivated) {
@@ -777,7 +804,7 @@ public class ResultsModel {
 										}
 										
 										// Update the LDW information on the previous spin result
-										if (ResultsModel.this.currspin == 0 || ResultsModel.this.ldwResetRequired) {
+										if (ResultsModel.this.ldwResetRequired) {
 											ResultsModel.this.updateLDWWins(r.isLDWWin(), null);
 											ResultsModel.this.updateLDWLosses(r.isLDWLose(), null);
 											ResultsModel.this.ldwResetRequired = false;
@@ -835,6 +862,7 @@ public class ResultsModel {
 									ResultsModel.this.basehittable);
 							Database.updateTableHit(ResultsModel.this.getBonusPaytableDBTableName(), 
 									ResultsModel.this.bonushittable);
+							
 							Database.flushBatch();
 	
 							ResultsModel.this.stop();
@@ -846,14 +874,16 @@ public class ResultsModel {
 										+ e.getMessage());
 						e.printStackTrace();
 					} finally {
-						try {
+						System.gc();
+						/* try {
 							Database.shutdownConnection();
+							System.gc();
 						} catch (SQLException e) {
 							ResultsModel.this.outputLog
 									.outputStringAndNewLine("ERROR: Closing database connection. Message="
 											+ e.getMessage());
 							e.printStackTrace();
-						}
+						} */
 					}
 				} else {
 					ResultsModel.this.stop();
@@ -861,15 +891,155 @@ public class ResultsModel {
 				
 				ResultsModel.this.outputLog
 						.outputStringAndNewLine("END PRODUCTION");
-
+				
+				// Add the bonus spins counts to log
+				ResultsModel.this.outputLog.outputStringAndNewLine("Bonus Spin Counts: ");
+				for (int i = 0; i < ResultsModel.this.bonusspincounts.size(); i++)
+					ResultsModel.this.outputLog.outputStringAndNewLine("\t\t " + ResultsModel.this.bonusspincounts.get(i));
+				
 			}
 		};
-
+		
 		t.setPriority(Thread.MAX_PRIORITY);
 		t.start();
 
 	}
 
+	
+
+	protected void doGamblersRuinMode() {
+		ResultsModel.this.currgrblock = ResultsModel.this.grblocks.get(ResultsModel.this.currblockindex);
+		ResultsModel.this.currgre = new GamblersRuinEntry();
+		int total_freespin = 0;
+		int extra_freespin = 0;
+		Result pre_result = null;
+		
+		try {
+			while (ResultsModel.this.currgrblock != null
+					&& !ResultsModel.this.cancelled) {
+				
+				if (!ResultsModel.this.paused) {
+					// Check/update if still in bonus state
+					ResultsModel.this.checkBonusState();
+					// Reset total free spin count when no longer in bonus state
+					if (!ResultsModel.this.bonusactive) 
+						total_freespin = 0;
+					
+					// Simulate spin
+					Result r = ResultsModel.this.simulator.simulateSpin();
+					
+					if (r != null) {
+						// Set record numbers of the result
+						r.setRecordNumber(ResultsModel.this.getCurrSpin() + 1);
+						r.setBlockNumber(ResultsModel.this.currgrblock.getBlockNum());
+						r.setRepeatNumber(ResultsModel.this.currblockrepeat);
+						
+						// If there are free spins awarded from the spin
+						if (r.freespinsawarded > 0) {
+							total_freespin += r.freespinsawarded;
+							
+							// Check if the number of free spins awarded exceeds the allowed
+							if (total_freespin > ResultsModel.this.MAX_FREESPINS) 
+								extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
+							else 
+								extra_freespin = r.freespinsawarded;
+							
+							// Add free spins to simulate
+							ResultsModel.this.addFreeSpins(extra_freespin);
+							
+							// Add free spins to the Gamblers Ruin Entry
+							currgre.addNumFreeSpins(extra_freespin);
+							
+							// Add bonus initialization
+							if (!r.bonusspin)
+								currgre.incrementNumBonusActivation();
+							
+							extra_freespin = 0;
+						}
+						
+						if (ResultsModel.this.bonusactive)
+							ResultsModel.this.decrementFreeSpins();
+						
+						ResultsModel.this.incrementGRCurrSpin(r);
+						
+						// Update the LDW information on the previous spin result
+						if (ResultsModel.this.ldwResetRequired) {
+							ResultsModel.this.updateLDWWins(r.isLDWWin(), null);
+							ResultsModel.this.updateLDWLosses(r.isLDWLose(), null);
+							ResultsModel.this.ldwResetRequired = false;
+						} else {
+							ResultsModel.this.updateLDWWins(r.isLDWWin(), pre_result);
+							ResultsModel.this.updateLDWLosses(r.isLDWLose(), pre_result);
+							
+							// Insert previous spin result into the database
+							if (ResultsModel.this.createSpinTable)
+								Database.insertIntoTable(ResultsModel.this
+										.getSpinResultsDBTableName(), pre_result);
+						}
+						
+						pre_result = r;
+						
+						// If one block or one blockrepeat is done
+						if (ResultsModel.this.ldwResetRequired) {
+							pre_result.setLDWWins(ResultsModel.this.wins);
+							pre_result.setLDWLosses(ResultsModel.this.losses);
+							
+							if (ResultsModel.this.createSpinTable)
+								Database.insertIntoTable(ResultsModel.this
+										.getSpinResultsDBTableName(), pre_result);
+							
+							ResultsModel.this.ldwResetRequired = false;
+						}
+					} // if spin result is not valid
+				} // if paused
+			} // while all grblocks finished 
+			
+			// Insert the last spin results into the database
+			if (pre_result != null) {
+				pre_result.setLDWWins(ResultsModel.this.wins);
+				pre_result.setLDWLosses(ResultsModel.this.losses);
+				
+				if (ResultsModel.this.createSpinTable)
+					Database.insertIntoTable(ResultsModel.this
+							.getSpinResultsDBTableName(), pre_result);
+				}
+			
+			// Update the base & bonus hit counts
+			Database.updateTableHit(ResultsModel.this.getBasePaytableDBTableName(), 
+					ResultsModel.this.basehittable);
+			Database.updateTableHit(ResultsModel.this.getBonusPaytableDBTableName(), 
+					ResultsModel.this.bonushittable);
+			
+			Database.flushBatch();
+			
+			ResultsModel.this.stop();
+		} catch (Exception e) {
+			ResultsModel.this.stop();
+			ResultsModel.this.outputLog
+					.outputStringAndNewLine("ERROR: Production thread caught exception. Message="
+							+ e.getMessage());
+			e.printStackTrace();
+		}
+		
+		//TODO GamblersRuin print logs and insert into db
+		
+	}
+
+
+	public void shutdown() {
+		if (Database.isConnected()) {
+			try {
+				Database.shutdownConnection();
+				System.gc();
+			} catch (SQLException e) {
+				ResultsModel.this.outputLog
+						.outputStringAndNewLine("ERROR: Closing database connection. Message="
+								+ e.getMessage());
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	protected void generateDBTableName() {
 		this.setTableSuffix();
 		this.outputLog.outputStringAndNewLine("Set Blocks DB Table Name: "
@@ -922,15 +1092,14 @@ public class ResultsModel {
 			} else { // If the currblock is done
 				this.currblockindex++;
 				this.blockComplete = true;
+				this.currblockrepeat = 1;
 				
 				// If there are more blocks
 				if (this.currblockindex < this.blocks.size()) {
 					this.currblock = this.blocks.get(currblockindex);
-					this.currblockrepeat = 1;
 					this.ldwResetRequired = true;
 				} else {
 					this.currblock = null;
-					this.currblockrepeat = 1;
 				}
 			}
 		}
@@ -940,17 +1109,41 @@ public class ResultsModel {
 	
 	protected void incrementGRCurrSpin(Result r) {
 		this.currspin++;
-		
+		//TODO set flags for GR mode here
 		// If the currgrblock has balance <= 0
 		if (this.currgrblock.incrementCurrSpin(r)) {
 			// If currgrblock needs to be repeated
-			if (this.currblockrepeat < this.currgrblock.numrepeats) {
-				this.currblockrepeat++;
+			if (this.currblockrepeat < this.currgrblock.repeats) {
 				this.currgre.updateGRE();
+				this.currgre.resetCurrPeakBalance();
+				this.currblockrepeat++;
 				this.currgrblock.reset();
+				this.ldwResetRequired = true;
+				this.repeatComplete = true;
+			// If the currgrblock is done
+			} else {
+				this.currgre.updateGRE();
+				
+				// Insert GamblersRuinEntry to the database
+				Database.insertIntoTable(getGamblersRuinDBTableName(), currgre, grblocks.size());
+
+				
+				this.currblockindex++;
+				this.blockComplete = true;
+				this.currblockrepeat = 1;
+				
+				// If there are more grblocks
+				if (this.currblockindex < this.grblocks.size()) {
+					this.currgrblock = this.grblocks.get(currblockindex);
+					this.currgre.reset();
+					this.ldwResetRequired = true;
+				} else {
+					this.currgrblock = null;
+				}
 				
 			}
 		}
+		this.UpdateViews();
 	}
 	
 	protected void updateLPE(Result r) {
@@ -986,6 +1179,7 @@ public class ResultsModel {
 			currlpe.updateLossBalance();
 			currlpe.calculateAvgLossBalance();
 			currlpe.calculateSD();
+
 			
 			try {
 				Database.insertIntoTable(this.getLossPercentageDBTableName(), currlpe, this.blocks.size());
@@ -1043,7 +1237,6 @@ public class ResultsModel {
 		// Read Gamblers Ruin Blocks
 		if (this.genGamblersRuin) {
 			NodeList list = doc.getElementsByTagName("grblock");
-			GRBlock grb = new GRBlock();
 			
 			for (int i = 0; i < list.getLength(); i++) {
 				Node node = list.item(i);
@@ -1055,6 +1248,7 @@ public class ResultsModel {
 					int bankroll = -1;
 					short denomination = -1;
 					int blockrepeats = -1;
+					GRBlock grb = new GRBlock();
 					
 					try {
 						numlines = Short.parseShort(e.getAttribute("numlines"));
@@ -1103,7 +1297,7 @@ public class ResultsModel {
 						grb.setBankRoll(bankroll);
 						grb.setCurrBalance(bankroll);
 						grb.setDenomination(denomination);
-						grb.setNumRepeats(blockrepeats);
+						grb.setRepeats(blockrepeats);
 						grb.setBlockNum(i);
 						this.grblocks.add(grb);
 					} else {
@@ -2281,49 +2475,37 @@ public class ResultsModel {
 		private short linebet = 1;
 		private short denomination = 1;
 		private int bankroll = 0;
-		private int numrepeats = 1;
+		private int repeats = 1;
 		private int currspin = 0;
 		private long blocknum = 0;
 		private double currbalance = 0;
-		
-		public short getNumLines() {
-			return numlines;
-		}
-
-		public void setNumLines(short numlines) {
-			this.numlines = numlines;
-		}
-		
-		public short getLineBet() {
-			return linebet;
-		}
-		
-		public void setLineBet(short linebet) {
-			this.linebet = linebet;
-		}
-		
-		public double getDenomination() {
-			return ResultsModel.roundTwoDecimals(denomination / 100.0);
-		}
-		
-		public void setDenomination(short denomination) {
-			this.denomination = denomination;
-		}
 		
 		public int getBankRoll() {
 			return bankroll;
 		}
 		
+		public void setRepeats(int blockrepeats) {
+			this.repeats = blockrepeats;
+			
+		}
+
+		public void setDenomination(short denom) {
+			this.denomination = denom;
+			
+		}
+
+		public void setLineBet(short linebet) {
+			this.linebet = linebet;
+			
+		}
+
+		public void setNumLines(short numlines) {
+			this.numlines = numlines;
+			
+		}
+
 		public void setBankRoll(int backroll) {
 			this.bankroll = backroll;
-		}
-		
-		public int getNumRepeats() {
-			return numrepeats;
-		}
-		
-		public void setNumRepeats(int numrepeats) {
-			this.numrepeats = numrepeats;
 		}
 		
 		public int getCurrSpin() {
@@ -2345,6 +2527,10 @@ public class ResultsModel {
 			}
 		}
 		
+		public short getNumLine() {
+			return numlines;
+		}
+		
 		public long getBlockNum() {
 			return blocknum;
 		}
@@ -2354,13 +2540,8 @@ public class ResultsModel {
 		}
 		
 		public void reset() {
-			//numlines = 1;
-			//linebet = 1;
-			//denomination = 1;
-			//bankroll = 0;
-			//numrepeats = 1;
-			currspin = 0;
-			currbalance = this.bankroll;
+			this.currspin = 0;
+			currbalance = (double)this.bankroll;
 		}
 
 		public double getCurrBalance() {
@@ -2371,10 +2552,36 @@ public class ResultsModel {
 			this.currbalance = (double)initial_balance;
 		}
 
-		public void updateCurrBalance(Result r) {
-			currbalance -= this.linebet * this.numlines * r.getFormattedDenomination();
-			currbalance += r.getCreditsWon() * r.getFormattedDenomination();
+		public double getFormattedDenomination() {
+			return ResultsModel.roundTwoDecimals(this.denomination / 100.0);
 		}
+		
+		public void updateCurrBalance(Result r) {
+			//TODO check balance updates here
+			if (ResultsModel.this.bonusactive)
+				currbalance += r.getCreditsWon() * getFormattedDenomination();
+			else {
+				currbalance -= linebet * numlines * getFormattedDenomination();
+				currbalance += r.getCreditsWon() * getFormattedDenomination();
+			}
+			
+			// Update the peak balance in the current Gamblers Ruin Entry
+			if (currbalance > ResultsModel.this.currgre.currpeakbalance)
+				ResultsModel.this.currgre.setCurrPeakBalance(currbalance);
+			
+			// Update the win/loss/ldw info in the current Gamblers Ruin Entry
+			if (ResultsModel.this.bonusactive)
+				ResultsModel.this.currgre.incrementWins();
+			
+			else if (r.creditswon > 0) {
+				if ((r.creditswon - r.linebet * r.numlines) < 0)
+					ResultsModel.this.currgre.incrementLdws();
+				else
+					ResultsModel.this.currgre.incrementWins();
+			} else 
+				ResultsModel.this.currgre.incrementLosses();
+		}
+
 		
 	}
 
@@ -2699,17 +2906,34 @@ public class ResultsModel {
 			calculateWBBonusPayout();
 			
 			if (!this.model.bonusactive) {
-				for (int i = 0; i < this.model.currblock.numlines
-						&& i < this.model.paylines.size(); i++) {
-					p = this.model.paylines.get(i);
-					winsequence = "";
-					winsequence += symbolset[REEL_ONE][p.getR1()];
-					winsequence += symbolset[REEL_TWO][p.getR2()];
-					winsequence += symbolset[REEL_THREE][p.getR3()];
-					winsequence += symbolset[REEL_FOUR][p.getR4()];
-					winsequence += symbolset[REEL_FIVE][p.getR5()];
-
-					calculatePayoutBase(winsequence, i);
+				// If it is in Gamblers Ruin mode
+				if (!this.model.genGamblersRuin) {
+					for (int i = 0; i < this.model.currblock.numlines
+							&& i < this.model.paylines.size(); i++) {
+						p = this.model.paylines.get(i);
+						winsequence = "";
+						winsequence += symbolset[REEL_ONE][p.getR1()];
+						winsequence += symbolset[REEL_TWO][p.getR2()];
+						winsequence += symbolset[REEL_THREE][p.getR3()];
+						winsequence += symbolset[REEL_FOUR][p.getR4()];
+						winsequence += symbolset[REEL_FIVE][p.getR5()];
+	
+						calculatePayoutBase(winsequence, i);
+					}
+				// If not in Gamblers Ruin mode
+				} else {
+					for (int i = 0; i < this.model.currgrblock.numlines
+							&& i < this.model.paylines.size(); i++) {
+						p = this.model.paylines.get(i);
+						winsequence = "";
+						winsequence += symbolset[REEL_ONE][p.getR1()];
+						winsequence += symbolset[REEL_TWO][p.getR2()];
+						winsequence += symbolset[REEL_THREE][p.getR3()];
+						winsequence += symbolset[REEL_FOUR][p.getR4()];
+						winsequence += symbolset[REEL_FIVE][p.getR5()];
+	
+						calculatePayoutBase(winsequence, i);
+					}
 				}
 			} else {
 					r.setBonusSpin(true);
@@ -2870,7 +3094,7 @@ public class ResultsModel {
 				r.setBonusActivated(true);
 				if (sr.bestFreeStormPayout > 0) {
 					creditswon += sr.bestFreeStormPayout;
-					r.addFreeStormWinAmount(line, sr.bestFreeStormPayout);
+					r.addFreeStormWinAmount(line, getAwardedSpins(sr.bestFreeStormPayout));
 					r.addFreeSpinsAwarded(getAwardedSpins(sr.bestFreeStormPayout));
 				} 
 			}
@@ -3033,22 +3257,116 @@ public class ResultsModel {
 		private int ldws = 0;
 		private int losses = 0;
 		
+		private int totalspins = 0;
 		private int numspins = 0;
 		private int numfreespins = 0;
-		private int numextrafreespins = 0;
+		private int numbonusactivation = 0;
+		private long blocknum = 0;
+		private short numline = 0;
 		
 		private double currpeakbalance = 0;
 		
-		private ArrayList<Range> spinrange = new ArrayList<Range>();
+		private ArrayList<Range> spinranges = new ArrayList<Range>();
 		private ArrayList<Integer> spins = new ArrayList<Integer>();
 		
-		private ArrayList<Range> peakbalancerange = new ArrayList<Range>();
+		private ArrayList<Range> peakbalanceranges = new ArrayList<Range>();
 		private ArrayList<Integer> peakbalances = new ArrayList<Integer>();
 		
+		
 		public GamblersRuinEntry() {
-			//TODO initialize things here
+			currpeakbalance = (double)ResultsModel.this.currgrblock.getBankRoll();
+			this.blocknum = ResultsModel.this.currgrblock.getBlockNum();
+			this.numline = ResultsModel.this.currgrblock.getNumLine();
+			
+			// Initialize the ranges
+			int low = 0;
+			int increment = 500;
+			for (int i = 0; i < 10; i++) {
+				int high = low + increment;
+				Range r = new Range(low, high);
+				low = high;
+				spinranges.add(i, r);
+			}
+			increment = 5000;
+			for (int i = 10; i < 14; i++) {
+				int high = low + increment;
+				Range r = new Range(low, high);
+				low = high;
+				spinranges.add(i, r);
+			}
+			spinranges.add(14, new Range(low, low));
+			
+			
+			low = 100;
+			increment = 100;
+			peakbalanceranges.add(0, new Range(low, low));
+			for (int i = 1; i < 10; i++) {
+				int high = low + increment;
+				Range r = new Range(low, high);
+				low = high;
+				peakbalanceranges.add(i, r);
+			}
+			increment = 1000;
+			for (int i = 10; i < 14; i++) {
+				int high = low + increment;
+				Range r = new Range(low, high);
+				low = high;
+				peakbalanceranges.add(i, r);
+			}
+			peakbalanceranges.add(14, new Range(low, low));
+			
+			// Initialize the array lists
+			for (int i = 0; i < spinranges.size(); i++)
+				this.spins.add(0);
+			
+			for (int i = 0; i < peakbalanceranges.size(); i++)
+				this.peakbalances.add(0);
+			
 		}
 		
+		public void updateGRE() {
+			this.numspins = ResultsModel.this.currgrblock.getCurrSpin() + 1;
+			this.totalspins += numspins;
+			
+			// Update Num of spin ranges
+			for (int i = 0; i < spinranges.size(); i++) {
+				if (spinranges.get(i).isTotalSpinCountInRange(numspins)) {
+					this.incrementNumSpins(i);
+					break;
+				}
+			}
+			
+			// Update Peak balance ranges
+			for (int i = 0; i < peakbalanceranges.size(); i++) {
+				if (peakbalanceranges.get(i).isPeakBalanceInRange(currpeakbalance)) {
+					this.incrementPeakBalances(i);
+					break;
+				}
+			}
+			
+		}
+		
+		// Called at the end of each grblock
+		public void reset() {
+			if (ResultsModel.this.currblockindex < ResultsModel.this.grblocks.size()) {
+				this.currpeakbalance = (double)ResultsModel.this.currgrblock.getBankRoll();
+				this.blocknum = ResultsModel.this.currgrblock.getBlockNum();
+				this.numline = ResultsModel.this.currgrblock.getNumLine();
+				this.ldws = 0;
+				this.wins = 0;
+				this.losses = 0;
+				this.numfreespins = 0;
+				this.numbonusactivation = 0;
+				this.numspins = 0;
+				this.totalspins = 0;
+			}
+		}
+		
+		// Called at the end of each block repeat
+		public void resetCurrPeakBalance() {
+			currpeakbalance = (double)ResultsModel.this.currgrblock.getBankRoll();
+		}
+
 		public int getWins() {
 			return wins;
 		}
@@ -3073,60 +3391,72 @@ public class ResultsModel {
 			this.losses++;
 		}
 
+		public int getTotalSpins() {
+			return totalspins;
+		}
+		
 		public int getNumSpins() {
 			return numspins;
 		}
-
-		public void setNumSpins(int numspins) {
-			this.numspins = numspins;
+		
+		public short getNumLine() {
+			return numline;
 		}
 
 		public int getNumFreeSpins() {
 			return numfreespins;
 		}
+		
+		public long getBlockNum() {
+			return blocknum;
+		}
 
-		public void setNumFreeSpins(int numfreespins) {
-			this.numfreespins = numfreespins;
+		public ArrayList<Range> getSpinRanges() {
+			return this.spinranges;
+		}
+		
+		public void setNumFreeSpins(int value) {
+			this.numfreespins = value;
 		}
 		
 		public void addNumFreeSpins(int value) {
 			this.numfreespins += value;
 		}
 
-		public int getNumExtraFreeSpins() {
-			return numextrafreespins;
-		}
-
-		public void setNumExtraFreeSpins(int numextrafreespins) {
-			this.numextrafreespins = numextrafreespins;
+		public int getNumBonusActivation() {
+			return numbonusactivation;
 		}
 		
-		public void addNumExtraFreeSpins(int value) {
-			this.numextrafreespins += value;
+		public void incrementNumBonusActivation() {
+			this.numbonusactivation++;
 		}
 
 		public Range getSpinRange(int index) {
-			return spinrange.get(index);
+			return spinranges.get(index);
 		}
 
 		public int getSpins(int index) {
 			return spins.get(index);
 		}
 
-		public void incrementSpins(int spins) {
-			//TODO call isInRange and increment the spin count in the spins list
+		public void incrementNumSpins(int index) {
+			this.spins.set(index, spins.get(index) + 1);
 		}
 
+		public ArrayList<Range> getPeakBalanceRanges() {
+			return peakbalanceranges;
+		}
+		
 		public Range getPeakBalanceRange(int index) {
-			return peakbalancerange.get(index);
+			return peakbalanceranges.get(index);
 		}
 
-		public ArrayList<Integer> getPeakbalances() {
-			return peakbalances;
+		public int getPeakBalance(int index) {
+			return peakbalances.get(index);
 		}
 
-		public void incrementPeakBalances() {
-			//TODO call isInRange and increment the peak balance count in the list;
+		public void incrementPeakBalances(int index) {
+			this.peakbalances.set(index, peakbalances.get(index) + 1);
 		}
 
 		public double getCurrPeakBalance() {
@@ -3174,6 +3504,31 @@ public class ResultsModel {
 			else return false;
 				
 		}
+		
+		public boolean isTotalSpinCountInRange(int count) {
+			if (low == high)
+				return (count >= low);
+			else
+				return (count < high && count >= low);
+		}
+		
+		public boolean isPeakBalanceInRange(double balance) {
+			if (high == 100)
+				return (balance == high);
+			else if (low == 5000)
+				return (balance >= low);
+			else 
+				return (balance < high && balance >= low);
+		}
+		
+		public boolean isPrizeSizeInRange(double prizewon) {
+			if (low == high) 
+				return (prizewon >= low);
+			else 
+				return (prizewon >= low && prizewon < high);
+			
+		}
+				
 	}
 	
 	public static DecimalFormat twoDForm = new DecimalFormat("#.##");
@@ -3185,7 +3540,6 @@ public class ResultsModel {
 	public static float roundTwoDecimalsFloat(float d) {
 		return Float.valueOf(twoDForm.format(d));
 	}
-
 
 	
 }

@@ -232,6 +232,7 @@ public class ProcessingView extends JPanel implements IView {
 		if( this.model.isRunning() ) {
 			this.cancelButton.setEnabled(true);
 			this.pauseButton.setEnabled(true);
+			
 			if( this.model.isPaused() ) {
 				this.processingLabel.setText("Generating Results...Paused");
 			} else {
@@ -266,9 +267,17 @@ public class ProcessingView extends JPanel implements IView {
 			this.pauseButton.setText("Pause");
 		}	
 		
+		
 		this.currSpinLabel.setText("Produced: " + Integer.toString(this.model.getCurrSpin()));
-		//this.currConsumedSpinLabel.setText("Consumed: " + Integer.toString(this.model.getCurrConsumedSpin()));
-		this.totalSpinsLabel.setText("Spins: " + Integer.toString(this.model.getTotalSpins()));
+		// If in Gamblers Ruin mode
+		if (this.model.getGenGamblersRuin() 
+				&& this.model.getCurrGRBlock() != null) {
+			this.totalSpinsLabel.setText("Current Balance: " + Double.toString(this.model.getCurrBalance()));
+			this.pb.setVisible(false);
+		} else {
+			this.totalSpinsLabel.setText("Spins: " + Integer.toString(this.model.getTotalSpins()));
+		}
+		
 		this.pb.setMaximum(this.model.getTotalSpins());
 		this.pb.setValue(this.model.getCurrSpin()); //getCurrConsumedSpin());	
 		this.pb.repaint();

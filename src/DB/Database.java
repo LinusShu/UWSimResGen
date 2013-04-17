@@ -15,6 +15,7 @@ import java.util.Map;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
+import uwsimresgen.model.ResultsModel.GamblersRuinEntry;
 import uwsimresgen.model.ResultsModel.LossPercentageEntry;
 import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
@@ -59,10 +60,12 @@ public class Database {
 	
 	static PreparedStatement st = null;
 	static PreparedStatement lps = null;
+	static PreparedStatement grs = null;
 	
 	static int batchRequests = 0;
 	static int lpeBatchRequests = 0;
-
+	static int greBatchRequests = 0;
+	
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
 	}
@@ -513,6 +516,117 @@ public class Database {
 		}
 	}
 	
+	public static void insertIntoTable(String tableName, GamblersRuinEntry gre,
+			int blocksize) {
+		tableName = tableName.toUpperCase();
+		
+		String spinranges = "";
+		String spinrangesQ = "";
+		String spinrangesI = "";
+		
+		if (gre.getSpinRanges() != null) {
+			for (int i = 0; i < gre.getSpinRanges().size(); i++) {
+				Range r = gre.getSpinRange(i);
+				
+				if (r.low == r.high) {
+					spinranges += ", SPINS" + (int)r.low + "UP integer NOT NULL";
+					spinrangesI += ", SPINS" + (int)r.low + "UP";
+				} else {
+					spinranges += ", SPINS" + (int)r.low + "_" + (int)r.high + " integer NOT NULL";
+					spinrangesI += ", SPINS" + (int)r.low + "_" + (int)r.high;
+				}
+				
+				spinrangesQ += ",?";
+			}
+		}
+		
+		
+		String peakbalanceranges = "";
+		String peakbalancerangesQ = "";
+		String peakbalancerangesI = "";
+		
+		if (gre.getPeakBalanceRanges() != null) {
+			for (int i = 0; i < gre.getPeakBalanceRanges().size(); i++) {
+				Range r = gre.getPeakBalanceRange(i);
+				
+				if (r.high == 100) {
+					peakbalanceranges += ", PB" + (int)r.low + " integer NOT NULL";
+					peakbalancerangesI += ", PB" + (int)r.low;
+				} else if (r.low == 5000) {
+					peakbalanceranges += ", PB" + (int)r.low  + "UP integer NOT NULL";
+					peakbalancerangesI += ", PB" + (int)r.low + "UP";
+				} else {
+					peakbalanceranges += ", PB" + (int)r.low + "_" + (int)r.high + " integer NOT NULL";
+					peakbalancerangesI += ", PB" + (int)r.low + "_" + (int)r.high;
+				}
+				peakbalancerangesQ += ",?";
+			}
+		}
+		
+		try {
+		// Create table if does not exist
+			if (!Database.doesTableExist(tableName)) {
+	
+				String query = "create table " + tableName 
+						+ " (BLOCKID bigint NOT NULL, "
+						+ "NUMOFLINES smallint NOT NULL, "
+						+ "NUMOFSPINS integer NOT NULL, "
+						+ "FREESPINS integer NOT NULL, "
+						+ "BONUSACTIVATION integer NOT NULL, "
+						+ "WINS integer NOT NULL, "
+						+ "LOSSES integer NOT NULL, "
+						+ "LDWS integer NOT NULL "
+						+ spinranges + peakbalanceranges + ")";
+				
+				Database.createTable(tableName, query);
+			}
+			
+			// Otherwise, add the LossPercentageEntry to the table
+			String query = "insert into " + tableName
+					+ "(BLOCKID, NUMOFLINES, NUMOFSPINS, FREESPINS, BONUSACTIVATION, WINS, LOSSES, LDWS" 
+					+ spinrangesI + peakbalancerangesI + ") "
+					+ "values(?,?,?,?,?,?,?,?" + spinrangesQ + peakbalancerangesQ + ")";
+			
+			
+			if (grs == null)
+				grs = conn.prepareStatement(query);
+			
+			int index = 9;
+			grs.setLong(1, gre.getBlockNum());
+			grs.setShort(2, gre.getNumLine());
+			grs.setInt(3, gre.getTotalSpins());
+			grs.setInt(4, gre.getNumFreeSpins());
+			grs.setInt(5, gre.getNumBonusActivation());
+			grs.setInt(6, gre.getWins());
+			grs.setInt(7, gre.getLosses());
+			grs.setInt(8, gre.getLdws());
+			
+			for (int i = 0; i < gre.getSpinRanges().size(); i++) {
+				grs.setInt(index, gre.getSpins(i));
+				index ++;
+			}
+
+			for (int i = 0; i < gre.getPeakBalanceRanges().size(); i++) {
+				grs.setInt(index, gre.getPeakBalance(i));
+				index ++;
+			}
+			
+			grs.addBatch();
+			greBatchRequests++;
+			
+			if (greBatchRequests >= blocksize) {
+				grs.executeBatch();
+				greBatchRequests = 0;
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}		
+		
+		
+		
+	}
+	
 	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
@@ -545,9 +659,7 @@ public class Database {
 			
 			} catch (SQLException e) {
 				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-			} 
+			}
 		}
 	}
 
@@ -635,9 +747,15 @@ public class Database {
 	// startup.
 	public static void shutdownConnection() throws SQLException {
 		try {
-			if (st != null) {
+			if (st != null || lps != null || grs != null) {
 				st.close();
 				st = null;
+				
+				lps.close();
+				lps = null;
+				
+				grs.close();
+				grs = null;
 			}
 			conn.commit();
 			DriverManager.getConnection(URL_SHUTDOWN);
@@ -660,5 +778,19 @@ public class Database {
 		
 		return parSequence;
 	}
+
+	public static boolean isConnected() {
+		if (conn == null)
+			return false;
+		
+		try {
+			return conn.isValid(0);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 
 }
