@@ -65,6 +65,7 @@ public class HomeView extends JPanel implements IView  {
 	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
 	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
 	private JCheckBox genGamblersRuinCheckBox = new JCheckBox("Simulate Gamblers Ruin Scenario");
+	private JCheckBox genPrizeSizeCheckBox = new JCheckBox("Generate Prize Size DB Table");
 	
 	private JLabel simulatorMode = new JLabel("Simulator Mode:");
 	private JRadioButton genRandomSpins = new JRadioButton("Random Spins");
@@ -191,11 +192,7 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridy = 6;
 		this.gbc.anchor = GridBagConstraints.EAST;
 		this.add(genAllBonusSpinsCheckBox, gbc);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 7;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genNoTableCheckBox, gbc);
+
 		
 		/*
 		JPanel optionsPan = new JPanel();
@@ -244,12 +241,22 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.insets.set(0, 0, 0, 0);
 		this.add(optionsPan, gbc);*/
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 8;
+		this.gbc.gridy = 7;
 		this.gbc.anchor = GridBagConstraints.EAST;
 		this.add(genGamblersRuinCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
+		this.gbc.gridy = 8;
+		this.gbc.anchor = GridBagConstraints.EAST;
+		this.add(genPrizeSizeCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
 		this.gbc.gridy = 9;
+		this.gbc.anchor = GridBagConstraints.EAST;
+		this.add(genNoTableCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 10;
 		this.gbc.gridwidth = 3;
 		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.gbc.anchor = GridBagConstraints.CENTER;
@@ -423,6 +430,21 @@ public class HomeView extends JPanel implements IView  {
 			
 		});
 		
+		this.genPrizeSizeCheckBox.addItemListener(new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent arg0) {
+				if( arg0.getStateChange() == ItemEvent.SELECTED ) {
+					HomeView.this.model.setGenPrizeSize(true);
+				} else {
+					HomeView.this.model.setGenPrizeSize(false);
+				}
+				
+			}
+
+			
+		});
+		
 		this.numlinesTF.addFocusListener(new FocusListener() {
 
 			@Override
@@ -524,24 +546,31 @@ public class HomeView extends JPanel implements IView  {
 			this.runButton.setEnabled(false);
 			this.selectFile.setEnabled(false);
 			this.blocksFile.setEnabled(false);
+			
 			this.genAllStopsCheckBox.setEnabled(false);
 			this.genNoTableCheckBox.setEnabled(false);
 			this.genAllBonusSpinsCheckBox.setEnabled(false);
 			this.genGamblersRuinCheckBox.setEnabled(false);
+			this.genPrizeSizeCheckBox.setEnabled(false);
+			
 			this.numlinesTF.setEnabled(false);
 			this.prefixButton.setEnabled(false);
 			this.dbnameButton.setEnabled(false);
 			this.blocksFileTF.setEnabled(false);
 			this.selectFileTF.setEnabled(false);
 			this.prefixTF.setEnabled(false);
-			this.dbnameTF.setEnabled(false);			
+			this.dbnameTF.setEnabled(false);	
+			
 		} else {
 			this.runButton.setEnabled(true);
 			this.selectFile.setEnabled(true);
+			
 			this.genAllStopsCheckBox.setEnabled(true);
 			this.genNoTableCheckBox.setEnabled(true);
 			this.genAllBonusSpinsCheckBox.setEnabled(true);
 			this.genGamblersRuinCheckBox.setEnabled(true);
+			this.genPrizeSizeCheckBox.setEnabled(true);
+			
 			this.prefixButton.setEnabled(true);
 			this.dbnameButton.setEnabled(true);
 			this.blocksFileTF.setEnabled(true);
@@ -558,7 +587,10 @@ public class HomeView extends JPanel implements IView  {
 				this.numlinesLabel.setEnabled(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genGamblersRuinCheckBox.setEnabled(false);
-			} else if (this.model.getGenGamblersRuin()) {
+				
+			}
+			
+			if (this.model.getGenGamblersRuin()) {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
 				this.blocksFileTF.setEnabled(true);
@@ -567,7 +599,17 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllStopsCheckBox.setEnabled(false);
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
-			} else if (this.model.getGenAllBonusSpin()) {
+				this.genPrizeSizeCheckBox.setEnabled(false);
+			}
+			
+			if (this.model.getGenPrizeSize()) {
+				this.blocksFile.setEnabled(true);
+				this.blocksFileLabel.setEnabled(true);
+				this.blocksFileTF.setEnabled(true);
+				this.genGamblersRuinCheckBox.setEnabled(false);
+			}
+			
+			if (this.model.getGenAllBonusSpin()) {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
 				this.blocksFileTF.setEnabled(true);

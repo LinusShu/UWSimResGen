@@ -19,6 +19,7 @@ import uwsimresgen.model.ResultsModel.GamblersRuinEntry;
 import uwsimresgen.model.ResultsModel.LossPercentageEntry;
 import uwsimresgen.model.ResultsModel.Payline;
 import uwsimresgen.model.ResultsModel.PaytableEntry;
+import uwsimresgen.model.ResultsModel.PrizeSizeEntry;
 import uwsimresgen.model.ResultsModel.Range;
 import uwsimresgen.model.ResultsModel.Result;
 import uwsimresgen.model.ResultsModel.Symbol;
@@ -61,10 +62,12 @@ public class Database {
 	static PreparedStatement st = null;
 	static PreparedStatement lps = null;
 	static PreparedStatement grs = null;
+	static PreparedStatement pss = null;
 	
 	static int batchRequests = 0;
 	static int lpeBatchRequests = 0;
 	static int greBatchRequests = 0;
+	static int pseBatchRequests = 0;
 	
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
@@ -627,6 +630,85 @@ public class Database {
 		
 	}
 	
+	public static void insertIntoTable(String tableName, PrizeSizeEntry pse, int blocksize) 
+			throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		String prizeranges = "";
+		String prizerangesQ = "";
+		String prizerangesI = "";
+		// Create table if does not exist
+		if (!Database.doesTableExist(tableName)) {
+			
+			
+
+			if (pse.getPrizeRanges() != null) {
+				for (int i = 0; i < pse.getPrizeRanges().size(); i++) {
+					Range r = pse.getPrizeRange(i);
+					
+					if (r.low == r.high) {
+						prizeranges += ", SIZE" + (int)r.low  + "UP integer NOT NULL";
+						prizerangesI += ", SIZE" + (int)r.low  + "UP";
+					} else {
+						prizeranges += ", SIZE" + (int)r.low + "_" + (int)r.high + " integer NOT NULL";
+						prizerangesI += ", SIZE" + (int)r.low + "_" + (int)r.high;
+					}
+					
+					prizerangesQ += ",?";
+				}
+			}
+			
+			String query = "create table " + tableName 
+					+ " (BLOCKID bigint NOT NULL, "
+					+ "NUMOFSPINS integer NOT NULL, "
+					+ "NUMOFLINES smallint NOT NULL, "
+					+ "NUMOFFREESPIN integer NOT NULL, "
+					+ "WINS integer NOT NULL, "
+					+ "LOSSES integer NOT NULL, "
+					+ "LDWS integer NOT NULL"
+					+ prizeranges + ")";
+			Database.createTable(tableName, query);
+		}
+		
+		// Otherwise, add the LossPercentageEntry to the table
+		String query = "insert into " + tableName
+				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, WINS, LOSSES, LDWS" 
+				+ prizerangesI + ") "
+				+ "values(?,?,?,?,?,?,?" + prizerangesQ + ")";
+		
+		try {
+			if (pss == null)
+				pss = conn.prepareStatement(query);
+			
+			int index = 8;
+			pss.setLong(1, pse.getCurrBlock().getBlockNumber());
+			pss.setInt(2, pse.getNumSpins());
+			pss.setShort(3, pse.getCurrBlock().getNumLines());
+			pss.setInt(4, pse.getFreeSpins());
+			pss.setInt(5, pse.getWins());
+			pss.setInt(6, pse.getLosses());
+			pss.setInt(7, pse.getLdws());
+			
+			for (int i = 0; i < pse.getPrizeSizes().size(); i++) {
+				pss.setInt(index, pse.getPrizeSize(i));
+				index ++;
+			}
+
+			
+			pss.addBatch();
+			pseBatchRequests++;
+			
+			if (pseBatchRequests >= blocksize) {
+				pss.executeBatch();
+				pseBatchRequests = 0;
+			}
+			
+			
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	
 	public static void updateTableHit(String tableName, HashMap<SimpleEntry<String, Integer>, Integer> hittable) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
@@ -747,15 +829,25 @@ public class Database {
 	// startup.
 	public static void shutdownConnection() throws SQLException {
 		try {
-			if (st != null || lps != null || grs != null) {
+			// Close all statements when shutting down the application
+			if (st != null) {
 				st.close();
 				st = null;
-				
+			}
+			
+			if (lps != null) {
 				lps.close();
 				lps = null;
-				
+			}
+			
+			if (grs != null) {
 				grs.close();
 				grs = null;
+			}
+			
+			if (pss != null) {
+				pss.close();
+				pss = null;
 			}
 			conn.commit();
 			DriverManager.getConnection(URL_SHUTDOWN);
@@ -786,7 +878,6 @@ public class Database {
 		try {
 			return conn.isValid(0);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}

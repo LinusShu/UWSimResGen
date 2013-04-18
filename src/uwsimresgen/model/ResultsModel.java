@@ -113,6 +113,7 @@ public class ResultsModel {
 	private short genallnumlines = 1;
 	private boolean createSpinTable = true;
 	private boolean genGamblersRuin = false;
+	private boolean genPrizeSize = false;
 	
 	private Block currblock = null;
 	private GRBlock currgrblock = null;
@@ -120,6 +121,7 @@ public class ResultsModel {
 	private int currblockrepeat = 1;
 	private LossPercentageEntry currlpe = null;
 	private GamblersRuinEntry currgre = null;
+	private PrizeSizeEntry currpze = null;
 	
 	private boolean bonusactive = false;
 
@@ -248,6 +250,11 @@ public class ResultsModel {
 		this.UpdateViews();
 	}
 	
+	public void setGenPrizeSize(boolean value) {
+		this.genPrizeSize = value;
+		this.UpdateViews();
+	}
+	
 	public boolean getGenAllStops() {
 		return this.simulator.getSeqStops();
 	}
@@ -258,6 +265,10 @@ public class ResultsModel {
 
 	public boolean getGenGamblersRuin() {
 		return this.genGamblersRuin;
+	}
+	
+	public boolean getGenPrizeSize() {
+		return this.genPrizeSize;
 	}
 	
 	public boolean getGenAllBonusSpin() {
@@ -732,7 +743,7 @@ public class ResultsModel {
 					
 
 					try {
-						//TODO add stuff here
+						//Producer Main Flow here
 						// If in GamblersRuin mode
 						if (ResultsModel.this.genGamblersRuin) {
 							doGamblersRuinMode();
@@ -741,6 +752,7 @@ public class ResultsModel {
 							ResultsModel.this.currblock = ResultsModel.this.blocks
 									.get(ResultsModel.this.currblockindex);
 							ResultsModel.this.currlpe = new LossPercentageEntry(ResultsModel.this.currblock);
+							ResultsModel.this.currpze = new PrizeSizeEntry();
 							
 							while (ResultsModel.this.currblock != null
 									&& !ResultsModel.this.cancelled) {
@@ -798,6 +810,7 @@ public class ResultsModel {
 											ResultsModel.this.currlpe.incrementNumFreeSpins(extra_freespin);
 											extra_freespin = 0;
 										}
+
 										
 										if (ResultsModel.this.bonusactive) {
 											ResultsModel.this.decrementFreeSpins();									
@@ -819,6 +832,11 @@ public class ResultsModel {
 										}
 	
 										ResultsModel.this.incrementCurrSpin();
+										
+										
+										// Update the PrizeSizeEntry if needed
+										if (ResultsModel.this.genPrizeSize)
+											currpze.updatePrizeSizeEntry(r);
 										
 										// Update the LossPercentageTable entry
 										ResultsModel.this.updateLPE(r);
@@ -1020,8 +1038,6 @@ public class ResultsModel {
 							+ e.getMessage());
 			e.printStackTrace();
 		}
-		
-		//TODO GamblersRuin print logs and insert into db
 		
 	}
 
@@ -2557,7 +2573,6 @@ public class ResultsModel {
 		}
 		
 		public void updateCurrBalance(Result r) {
-			//TODO check balance updates here
 			if (ResultsModel.this.bonusactive)
 				currbalance += r.getCreditsWon() * getFormattedDenomination();
 			else {
@@ -3212,18 +3227,80 @@ public class ResultsModel {
 
 	public class PrizeSizeEntry {
 		private Block currblock = null;
+		private int wins = 0;
+		private int losses = 0;
+		private int ldws = 0;
+		private int freespins = 0;
+		private double wager = 0;
+		private int numspins = 0;
 		
 		private ArrayList<Range> prizeranges = new ArrayList<Range>();
 		private ArrayList<Integer> prizesizes = new ArrayList<Integer>();
 		
 		public PrizeSizeEntry() {
-			//TODO initialize things here
+			this.currblock = ResultsModel.this.currblock;
+			
+			if (currblock != null) {
+				this.wager = currblock.getLineBet() * currblock.getNumLines() 
+						* currblock.getFormattedDenomination();
+				this.numspins = currblock.numspins;
+				
+				this.prizeranges.add(new Range(0, 1));
+				this.prizeranges.add(new Range(1, 2));
+				this.prizeranges.add(new Range(2, 5));
+				this.prizeranges.add(new Range(5, 10));
+				this.prizeranges.add(new Range(10, 20));
+				this.prizeranges.add(new Range(20, 50));
+				this.prizeranges.add(new Range(50, 100));
+				this.prizeranges.add(new Range(100, 320));
+				this.prizeranges.add(new Range(320, 800));
+				this.prizeranges.add(new Range(800, 800));
+				
+				for (int i = 0; i < prizeranges.size(); i++)
+					this.prizesizes.add(0);
+			}
 		}
 		
 		public Block getCurrBlock() {
 			return currblock;
 		}
+		
+		public int getWins() {
+			return wins;
+		}
+		
+		public void incrementWins() {
+			wins++;
+		}
+		
+		public int getLosses() {
+			return losses;
+		}
+		
+		public void incrementLosses() {
+			losses++;
+		}
+		
+		public int getLdws() {
+			return ldws;
+		}
+		
+		public void incrementLdws() {
+			ldws++;
+		}
 
+		public int getFreeSpins() {
+			return freespins;
+		}
+		
+		public void incrementFreeSpins() {
+			freespins++;
+		}
+		
+		public int getNumSpins() {
+			return numspins;
+		}
+		
 		public ArrayList<Range> getPrizeRanges() {
 			return prizeranges;
 		}
@@ -3244,10 +3321,56 @@ public class ResultsModel {
 			return prizesizes.get(index);
 		}
 		
-		public void setPrizesizes(int index, int value) {
-			this.prizesizes.set(index, value);
+		public void incrementPrizeSizes(int index) {
+			this.prizesizes.set(index, prizesizes.get(index) + 1);
 		}
 		
+		public void updatePrizeSizeEntry(Result r) {
+			double payout = r.creditswon * this.currblock.getFormattedDenomination();
+			
+			// If in bonus mode, update wins/free spins count/and prize size
+			if (ResultsModel.this.bonusactive) {
+				this.incrementWins();
+				this.incrementFreeSpins();
+				
+				for (int i = 0; i < prizeranges.size(); i++) {
+					double prizesize = payout / this.wager;
+					if (prizeranges.get(i).isPrizeSizeInRange(prizesize)) {
+						this.incrementPrizeSizes(i);
+						break;
+					}
+				}
+			// If there is a win
+			} else if (r.creditswon > 0) {
+				if ((payout - this.wager) < 0) {
+					this.incrementLdws();
+					this.incrementPrizeSizes(0);
+				} else {
+					this.incrementWins();
+					
+					for (int i = 1; i < prizeranges.size(); i++) {
+						double prizesize = payout / this.wager;
+						if (prizeranges.get(i).isPrizeSizeInRange(prizesize)) {
+							this.incrementPrizeSizes(i);
+							break;
+						}
+					}
+				}
+			} else {
+				this.incrementLosses();
+			}
+			
+			if (ResultsModel.this.blockComplete) {
+				try {
+					Database.insertIntoTable(ResultsModel.this.getPrizeSizesDBTableName(), 
+							ResultsModel.this.currpze, ResultsModel.this.blocks.size());
+					ResultsModel.this.currpze = new PrizeSizeEntry();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			//TODO check PSE errors here
+		}
 		
 	}
 	
@@ -3359,6 +3482,12 @@ public class ResultsModel {
 				this.numbonusactivation = 0;
 				this.numspins = 0;
 				this.totalspins = 0;
+				
+				for (int i = 0; i < this.spins.size(); i++)
+					spins.set(i, 0);
+				
+				for (int i = 0; i < this.peakbalances.size(); i++)
+					peakbalances.set(i, 0);
 			}
 		}
 		
