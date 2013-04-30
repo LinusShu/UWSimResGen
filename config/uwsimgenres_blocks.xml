@@ -8,30 +8,30 @@
 			numspins - integer > 0
 			blockrepeats - integer > 0
 		-->	
-		  
-		<block numlines="1" linebet="1" denomination="100" numspins="600" blockrepeats="1000" />  
-		<block numlines="10" linebet="1" denomination="10" numspins="600" blockrepeats="1000" /> 
-		<block numlines="20" linebet="1" denomination="5" numspins="600" blockrepeats="1000" />
+  
+		<block numlines="1" linebet="1" denomination="100" numspins="600" blockrepeats="10000" />  
+		<block numlines="10" linebet="1" denomination="10" numspins="600" blockrepeats="10000" /> 
+		<block numlines="20" linebet="1" denomination="5" numspins="600" blockrepeats="10000" />
 	  
-		<block numlines="1" linebet="1" denomination="100" numspins="1200" blockrepeats="1000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="1200" blockrepeats="1000" />
-		<block numlines="20" linebet="1" denomination="5" numspins="1200" blockrepeats="1000" />
+		<block numlines="1" linebet="1" denomination="100" numspins="1200" blockrepeats="10000" />
+		<block numlines="10" linebet="1" denomination="10" numspins="1200" blockrepeats="10000" />
+		<block numlines="20" linebet="1" denomination="5" numspins="1200" blockrepeats="10000" />
 		
-		<block numlines="1" linebet="1" denomination="100" numspins="2400" blockrepeats="1000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="2400" blockrepeats="1000" />
-		<block numlines="20" linebet="1" denomination="5" numspins="2400" blockrepeats="1000" />
+		<block numlines="1" linebet="1" denomination="100" numspins="2400" blockrepeats="10000" />
+		<block numlines="10" linebet="1" denomination="10" numspins="2400" blockrepeats="10000" />
+		<block numlines="20" linebet="1" denomination="5" numspins="2400" blockrepeats="10000" />
 		
-		<block numlines="1" linebet="1" denomination="100" numspins="6000" blockrepeats="1000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="6000" blockrepeats="1000" />
-		<block numlines="20" linebet="1" denomination="5" numspins="6000" blockrepeats="1000" />
+		<block numlines="1" linebet="1" denomination="100" numspins="6000" blockrepeats="10000" />
+		<block numlines="10" linebet="1" denomination="10" numspins="6000" blockrepeats="10000" />
+		<block numlines="20" linebet="1" denomination="5" numspins="6000" blockrepeats="10000" />
 		
-		<block numlines="1" linebet="1" denomination="100" numspins="15000" blockrepeats="1000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="15000" blockrepeats="1000" />
-		<block numlines="20" linebet="1" denomination="5" numspins="15000" blockrepeats="1000" />
-		
-		<block numlines="1" linebet="1" denomination="100" numspins="30000" blockrepeats="1000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="30000" blockrepeats="1000" />  
-		<block numlines="20" linebet="1" denomination="5" numspins="30000" blockrepeats="1000" /> 
+		<block numlines="1" linebet="1" denomination="100" numspins="15000" blockrepeats="10000" />
+		<block numlines="10" linebet="1" denomination="10" numspins="15000" blockrepeats="10000" />
+		<block numlines="20" linebet="1" denomination="5" numspins="15000" blockrepeats="10000" />
+ 		
+		<block numlines="1" linebet="1" denomination="100" numspins="30000" blockrepeats="10000" />
+		<block numlines="10" linebet="1" denomination="10" numspins="30000" blockrepeats="10000" />  
+		<block numlines="20" linebet="1" denomination="5" numspins="30000" blockrepeats="10000" /> 
 		
 	</blocks>
 	
@@ -40,14 +40,32 @@
 			numlines - integer (0, 20]
 			linebet - integer (0, 5]
 			bankroll - integer > 0 unit is DOLLARS
-			denomination - integer > 0 unit is CENTS
+			denomination - integer > 0 unit is CENTS; To improve accuracy, the real denomination used is calculated by denomination / numlines in the simulator.
+							In other words, denomination is the TOTAL WAGER on each spin in cents.
 			blockrepeats - integer > 0
 			Note: wager is numblines * linebet * denomination (CENTS)
 		-->
 		
-		<grblock numlines="1"  linebet="1" bankroll="100" denomination="100" blockrepeats="1000" />
-		<grblock numlines="10" linebet="1" bankroll="100" denomination="10" blockrepeats="1000" />
-		<grblock numlines="20" linebet="1" bankroll="100" denomination="5" blockrepeats="1000" />
+		<grblock numlines="1"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="2"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" /> 
+		<grblock numlines="3"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="4"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="5"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="6"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="7"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="8"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="9"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="10" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="11" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="12" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="13" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="14" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="15" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="16" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="17" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="18" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="19" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
+		<grblock numlines="20" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
 		
 	</grblocks>
 </data>

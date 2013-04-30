@@ -422,24 +422,46 @@ public class Database {
 	public static void insertIntoTable(String tableName, LossPercentageEntry lpe, int blocksize) 
 			throws SQLException {
 		tableName = tableName.toUpperCase();
+		
+		String ranges = "";
+		String rangesQ = "";
+		String rangesI = "";
+		
+		String bas = "";
+		String basQ = "";
+		String basI = "";
 		// Create table if does not exist
 		if (!Database.doesTableExist(tableName)) {
 			
-			String ranges = "";
+			
 
 			if (lpe.getRangeArray() != null) {
 				for (int i = 0; i < lpe.getRangeArray().size(); i++) {
 					Range r = lpe.getRangeArray().get(i);
 					
-					if (i < 4)
+					if (i < 4) {
 						ranges += ", LOSS" + (int)(r.high * 100) + "_" + (int)(r.low * 100) + " integer NOT NULL";
-					else if (i == 4)
-						ranges += ", MONEYBACK0 integer NOT NULL";
-					else if (i > 4 && i < lpe.getRangeArray().size() - 1)
+						rangesI += ", LOSS" + (int)(r.high * 100) + "_" + (int)(r.low * 100);
+						
+						bas += ", BA" + (int)(r.high * 100) + "_" + (int)(r.low * 100) + " integer NOT NULL";
+						basI += ", BA" + (int)(r.high * 100) + "_" + (int)(r.low * 100);
+					} else if (i >= 4 && i < lpe.getRangeArray().size() - 1) {
 						ranges += ", WIN" + (int)(r.high * -100) + "_" + (int)(r.low * -100) + " integer NOT NULL";
-					else
+						rangesI += ", WIN" + (int)(r.high * -100) + "_" + (int)(r.low * -100);
+						
+						bas += ", BA" + (int)(r.high * -100) + "_" + (int)(r.low * -100) + " integer NOT NULL";
+						basI += ", BA" + (int)(r.high * -100) + "_" + (int)(r.low * -100);
+					} else {
 						ranges += ", WIN900UP integer NOT NULL";
-
+						rangesI += ", WIN900UP";
+						
+						bas += ", BA900UP integer NOT NULL";
+						basI += ", BA900UP";
+					}
+					
+					rangesQ += ",?";
+					basQ += ",?";
+					
 				}
 			}
 			
@@ -453,35 +475,15 @@ public class Database {
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
 					+ "LDWS integer NOT NULL"
-					+ ranges + ")";
+					+ ranges + bas + ")";
 			Database.createTable(tableName, query);
-		}
-		
-		String ranges = "";
-		String rangesQ = "";
-		if (lpe.getRangeArray() != null) {
-			for (int i = 0; i < lpe.getRangeArray().size(); i++) {
-				Range r = lpe.getRangeArray().get(i);
-				
-				if (i < 4)
-					ranges += ", LOSS" + (int)(r.high * 100) + "_" + (int)(r.low * 100);
-				else if (i == 4)
-					ranges += ", MONEYBACK0";
-				else if (i > 4 && i < lpe.getRangeArray().size() - 1)
-					ranges += ", WIN" + (int)(r.high * -100) + "_" + (int)(r.low * -100);
-				else 
-					ranges += ", WIN900UP";
-					
-				
-				rangesQ += ",?";
-			}
 		}
 		
 		// Otherwise, add the LossPercentageEntry to the table
 		String query = "insert into " + tableName
 				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVG_LOSSBALANCE, SD_LOSSBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
-				+ ranges + ") "
-				+ "values(?,?,?,?,?,?,?,?,?" + rangesQ + ")";
+				+ rangesI + basI + ") "
+				+ "values(?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
 		
 		try {
 			if (lps == null)
@@ -501,9 +503,13 @@ public class Database {
 			
 			for (int i = 0; i < lpe.getLossPercentages().size(); i++) {
 				lps.setInt(index, lpe.getLossPercentage(i));
-				index ++;
+				index++;
 			}
-
+			
+			for (int i = 0; i < lpe.getBonusActivations().size(); i++) {
+				lps.setInt(index, lpe.getAvgBonusActivation(i));
+				index++;
+			}
 			
 			lps.addBatch();
 			lpeBatchRequests++;
@@ -579,7 +585,14 @@ public class Database {
 						+ "WINS integer NOT NULL, "
 						+ "LOSSES integer NOT NULL, "
 						+ "LDWS integer NOT NULL "
-						+ spinranges + peakbalanceranges + ")";
+						+ spinranges 
+						+ ", MAXSPINS integer NOT NULL"
+						+ ", AVGSPINS integer NOT NULL"
+						+ ", SPINMEDIAN integer NOT NULL "
+						+ peakbalanceranges
+						+ ", MAXPEAKBALANCE integer NOT NULL"
+						+ ", AVGPEAKBALANCE integer NOT NULL"
+						+ ", PEAKBALANCEMEDIAN integer NOT NULL)";
 				
 				Database.createTable(tableName, query);
 			}
@@ -587,8 +600,9 @@ public class Database {
 			// Otherwise, add the LossPercentageEntry to the table
 			String query = "insert into " + tableName
 					+ "(BLOCKID, NUMOFLINES, NUMOFSPINS, FREESPINS, BONUSACTIVATION, WINS, LOSSES, LDWS" 
-					+ spinrangesI + peakbalancerangesI + ") "
-					+ "values(?,?,?,?,?,?,?,?" + spinrangesQ + peakbalancerangesQ + ")";
+					+ spinrangesI + ", MAXSPINS" + ", AVGSPINS" + ", SPINMEDIAN" 
+					+ peakbalancerangesI + ", MAXPEAKBALANCE" + ", AVGPEAKBALANCE" + ", PEAKBALANCEMEDIAN) "
+					+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?" + spinrangesQ  + peakbalancerangesQ + ")";
 			
 			
 			if (grs == null)
@@ -608,11 +622,28 @@ public class Database {
 				grs.setInt(index, gre.getSpins(i));
 				index ++;
 			}
+			
+			grs.setInt(index, gre.getMaxSpins());
+			index++;
+			
+			grs.setInt(index, gre.getAvgSpins());
+			index++;
+			
+			grs.setInt(index, gre.getSpinMedian());
+			index ++;
 
 			for (int i = 0; i < gre.getPeakBalanceRanges().size(); i++) {
 				grs.setInt(index, gre.getPeakBalance(i));
 				index ++;
 			}
+			
+			grs.setInt(index, (int)gre.getMaxPeakBalance());
+			index++;
+			
+			grs.setInt(index, (int)gre.getAvgPeakBalance());
+			index++;
+			
+			grs.setInt(index, (int)gre.getPeakBalanceMedian());
 			
 			grs.addBatch();
 			greBatchRequests++;
@@ -664,6 +695,7 @@ public class Database {
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "NUMOFFREESPIN integer NOT NULL, "
 					+ "WINS integer NOT NULL, "
+					+ "MULTIWINS integer NOT NULL, "
 					+ "LOSSES integer NOT NULL, "
 					+ "LDWS integer NOT NULL"
 					+ prizeranges + ")";
@@ -672,22 +704,23 @@ public class Database {
 		
 		// Otherwise, add the LossPercentageEntry to the table
 		String query = "insert into " + tableName
-				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, WINS, LOSSES, LDWS" 
+				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, WINS, MULTIWINS, LOSSES, LDWS" 
 				+ prizerangesI + ") "
-				+ "values(?,?,?,?,?,?,?" + prizerangesQ + ")";
+				+ "values(?,?,?,?,?,?,?,?" + prizerangesQ + ")";
 		
 		try {
 			if (pss == null)
 				pss = conn.prepareStatement(query);
 			
-			int index = 8;
+			int index = 9;
 			pss.setLong(1, pse.getCurrBlock().getBlockNumber());
 			pss.setInt(2, pse.getNumSpins());
 			pss.setShort(3, pse.getCurrBlock().getNumLines());
 			pss.setInt(4, pse.getFreeSpins());
 			pss.setInt(5, pse.getWins());
-			pss.setInt(6, pse.getLosses());
-			pss.setInt(7, pse.getLdws());
+			pss.setInt(6, pse.getMultiWins());
+			pss.setInt(7, pse.getLosses());
+			pss.setInt(8, pse.getLdws());
 			
 			for (int i = 0; i < pse.getPrizeSizes().size(); i++) {
 				pss.setInt(index, pse.getPrizeSize(i));

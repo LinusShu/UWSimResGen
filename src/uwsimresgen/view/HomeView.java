@@ -590,26 +590,24 @@ public class HomeView extends JPanel implements IView  {
 				
 			}
 			
-			if (this.model.getGenGamblersRuin()) {
+			else if (this.model.getGenGamblersRuin()) {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
 				this.blocksFileTF.setEnabled(true);
-				this.numlinesTF.setEnabled(false);
-				this.numlinesLabel.setEnabled(false);
 				this.genAllStopsCheckBox.setEnabled(false);
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genPrizeSizeCheckBox.setEnabled(false);
 			}
 			
-			if (this.model.getGenPrizeSize()) {
+			else if (this.model.getGenPrizeSize()) {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
 				this.blocksFileTF.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 			}
 			
-			if (this.model.getGenAllBonusSpin()) {
+			else if (this.model.getGenAllBonusSpin()) {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);
 				this.blocksFileTF.setEnabled(true);
@@ -618,6 +616,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllStopsCheckBox.setEnabled(false);
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(false);
+				
 			} else {
 				this.blocksFile.setEnabled(true);
 				this.blocksFileLabel.setEnabled(true);

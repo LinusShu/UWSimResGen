@@ -6,7 +6,9 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -64,7 +66,7 @@ public class ResultsModel {
 	public static final int REEL_FIVE = 4;
 
 	public static final int PAYTABLE_BADPAYOUT = -99999;
-	public static final int MAX_BLOCKREPEATS = 1000;
+	public static final int MAX_BLOCKREPEATS = 10000;
 	public final int MAX_FREESPINS = 200;
 	
 	@SuppressWarnings("serial")
@@ -541,6 +543,7 @@ public class ResultsModel {
 				this.outputLog
 						.outputStringAndNewLine("Mode: Do All Reel Stop Combinations.");
 				Block b = new Block();
+				//TODO Set Denom. for All-Reel-Stop mode here
 				b.setDenomination((short) 1);
 				b.setNumLines(this.genallnumlines);
 				b.setLineBet((short) 1);
@@ -1130,14 +1133,16 @@ public class ResultsModel {
 		if (this.currgrblock.incrementCurrSpin(r)) {
 			// If currgrblock needs to be repeated
 			if (this.currblockrepeat < this.currgrblock.repeats) {
+				this.repeatComplete = true;
 				this.currgre.updateGRE();
 				this.currgre.resetCurrPeakBalance();
 				this.currblockrepeat++;
 				this.currgrblock.reset();
 				this.ldwResetRequired = true;
-				this.repeatComplete = true;
+				
 			// If the currgrblock is done
 			} else {
+				this.blockComplete = true;
 				this.currgre.updateGRE();
 				
 				// Insert GamblersRuinEntry to the database
@@ -1145,7 +1150,6 @@ public class ResultsModel {
 
 				
 				this.currblockindex++;
-				this.blockComplete = true;
 				this.currblockrepeat = 1;
 				
 				// If there are more grblocks
@@ -1168,6 +1172,10 @@ public class ResultsModel {
 			currlpe.setBalance(r.creditswon);
 		else
 			currlpe.setBalance(r.creditswon - currlpe.getBet());
+		
+		// update the bonusactivation count 
+		if (r.bonusactivated && !r.bonusspin)
+			currlpe.incrementBonusActivations();
 		
 		// update win/lose and ldws 
 		if (r.creditswon > 0) {
@@ -1340,7 +1348,7 @@ public class ResultsModel {
 					int blockrepeats = -1;
 
 					try {
-						numlines = Short.parseShort(e.getAttribute("numlines")); // Integer.parseInt(e.getAttribute("numlines"));
+						numlines = Short.parseShort(e.getAttribute("numlines")); 
 					} catch (NumberFormatException nfe) {
 						this.addErrorToLog2("Block[" + Integer.toString(i)
 								+ "] - Invalid value for 'numlines'. Value: "
@@ -1348,7 +1356,7 @@ public class ResultsModel {
 					}
 
 					try {
-						linebet = Short.parseShort(e.getAttribute("linebet")); // Integer.parseInt(e.getAttribute("linebet"));
+						linebet = Short.parseShort(e.getAttribute("linebet")); 
 					} catch (NumberFormatException nfe) {
 						this.addErrorToLog2("Block[" + Integer.toString(i)
 								+ "] - Invalid value for 'linebet'. Value: "
@@ -1357,7 +1365,7 @@ public class ResultsModel {
 
 					try {
 						denomination = Short.parseShort(e
-								.getAttribute("denomination")); // Integer.parseInt(e.getAttribute("denomination"));
+								.getAttribute("denomination")); 
 					} catch (NumberFormatException nfe) {
 						this.addErrorToLog2("Block[" + Integer.toString(i)
 								+ "] - Invalid value for 'denomination'. Value: "
@@ -1819,7 +1827,7 @@ public class ResultsModel {
 
 		private short numlines = 1;
 		private short linebet = 1;
-		private short denomination = 1;
+		private double denomination = 1;
 
 		private int creditswon = 0;
 		private int ldw_wins = 0;
@@ -2000,6 +2008,10 @@ public class ResultsModel {
 			this.denomination = value;
 		}
 
+		public void setDenomination(double value) {
+			this.denomination = value;
+		}
+		
 		public void setCreditsWon(int value) {
 			this.creditswon = value;
 		}
@@ -2084,7 +2096,7 @@ public class ResultsModel {
 			return this.linebet;
 		}
 
-		public short getDenomination() {
+		public double getDenomination() {
 			return this.denomination;
 		}
 
@@ -2186,11 +2198,13 @@ public class ResultsModel {
 		private double initialbalance = 0;
 		private double avglossbalance = 0;
 		private int curBalanceIndex = 0;
+		private int curBonusActivations = 0;
 		
 		private int repeats = 0;
 		private double sd = 0;
 		
 		private ArrayList<Integer> losspercentages = new ArrayList<Integer>();
+		private List<Integer> bonusActivations = new ArrayList<Integer>();
 		private ArrayList<Double> balances = new ArrayList<Double>();
 		private ArrayList<Range> ranges = new ArrayList<Range>();
 
@@ -2209,20 +2223,14 @@ public class ResultsModel {
 			// populate the balance array
 			for(int i = 0; i < this.repeats; i++) 
 				this.balances.add(initialbalance);
-			
+		
 			// populate the loss percentage range check array
 			double percent = 1;
-			boolean push = true;
 			while (percent >= -9) {
-				if (percent == 0 && push) {
-					ranges.add(new Range(0, 0));
-					push = false;
-				}
-				else if (percent == -9) {
+				if (percent == -9) {
 					ranges.add(new Range(-9, -9));
 					percent -= 0.25;
-				}
-				else {
+				} else {
 					ranges.add(new Range(percent - 0.25, percent));
 					percent -= 0.25;
 				}
@@ -2232,7 +2240,9 @@ public class ResultsModel {
 			for(int i = 0; i < ranges.size(); i++)
 				this.losspercentages.add(0);
 			
-			
+			// populate the bonusactivation array
+			for (int i = 0; i < ranges.size(); i++)
+				this.bonusActivations.add(0);
 		}
 		
 		public void updateLossBalance() {
@@ -2319,14 +2329,14 @@ public class ResultsModel {
 			return this.bet;
 		}
 		
-		public void setLossPercentage(int index) {
+		public void incrementLossPercentage(int index) {
 			this.losspercentages.set(index, this.losspercentages.get(index) + 1);
 		}
 		
 		public void calculateAvgLossBalance() {
 			int totallossbalance = 0;
 			
-			//Note: balances are store as credits value in the list, hence need to be converted into dollar values.
+			//Note: balances are stored as credits value in the list, hence need to be converted into dollar values.
 			for (double b : this.balances)
 				totallossbalance += b * this.denomination;
 			
@@ -2349,12 +2359,20 @@ public class ResultsModel {
 				boolean isInRange = ranges.get(i).isLossPercentageInRange(losspercentage);
 				
 				if (isInRange) {
-					this.setLossPercentage(i);
+					this.incrementLossPercentage(i);
+					this.addAvgBonusActivation(i);
 					break;
 				}
 					
 			}
 			
+		}
+		
+		private void addAvgBonusActivation(int index) {
+			int temp = this.bonusActivations.get(index);
+				
+			this.bonusActivations.set(index, temp + this.curBonusActivations);
+			this.curBonusActivations = 0;
 		}
 
 		public int getNumFreeSpins() {
@@ -2364,9 +2382,21 @@ public class ResultsModel {
 		public void incrementNumFreeSpins(int numfreespins) {
 			this.numfreespins += numfreespins;
 		}
+		
+		public void incrementBonusActivations() {
+			this.curBonusActivations++;
+		}
 
 		public ArrayList<Range> getRangeArray() {
 			return this.ranges;
+		}
+
+		public List<Integer> getBonusActivations() {
+			return this.bonusActivations;
+		}
+		
+		public int getAvgBonusActivation(int index) {
+			return this.bonusActivations.get(index);
 		}
 		
 	}
@@ -2489,7 +2519,7 @@ public class ResultsModel {
 	public class GRBlock {
 		private short numlines = 1;
 		private short linebet = 1;
-		private short denomination = 1;
+		private double denomination = 1;
 		private int bankroll = 0;
 		private int repeats = 1;
 		private int currspin = 0;
@@ -2506,7 +2536,7 @@ public class ResultsModel {
 		}
 
 		public void setDenomination(short denom) {
-			this.denomination = denom;
+			this.denomination = (double)denom / this.numlines;
 			
 		}
 
@@ -3233,6 +3263,9 @@ public class ResultsModel {
 		private int freespins = 0;
 		private double wager = 0;
 		private int numspins = 0;
+		private double bonuspayout = 0;
+		
+		private int multiwins = 0;;
 		
 		private ArrayList<Range> prizeranges = new ArrayList<Range>();
 		private ArrayList<Integer> prizesizes = new ArrayList<Integer>();
@@ -3301,6 +3334,14 @@ public class ResultsModel {
 			return numspins;
 		}
 		
+		public int getMultiWins() {
+			return this.multiwins;
+		}
+		
+		public void incrementMultiWins() {
+			this.multiwins++;
+		}
+		
 		public ArrayList<Range> getPrizeRanges() {
 			return prizeranges;
 		}
@@ -3327,35 +3368,46 @@ public class ResultsModel {
 		
 		public void updatePrizeSizeEntry(Result r) {
 			double payout = r.creditswon * this.currblock.getFormattedDenomination();
+			double prizesize = payout / this.wager;
 			
-			// If in bonus mode, update wins/free spins count/and prize size
-			if (ResultsModel.this.bonusactive) {
-				this.incrementWins();
-				this.incrementFreeSpins();
-				
+			// If just come out of the bonus mode
+			if (!ResultsModel.this.bonusactive && bonuspayout != 0) {
+				// Update the bonus initiating spin in the spin ranges
+				double prizesizebonus = this.bonuspayout / this.wager;
 				for (int i = 0; i < prizeranges.size(); i++) {
-					double prizesize = payout / this.wager;
-					if (prizeranges.get(i).isPrizeSizeInRange(prizesize)) {
+					if (prizeranges.get(i).isPrizeSizeInRange(prizesizebonus)) {
 						this.incrementPrizeSizes(i);
 						break;
 					}
 				}
-			// If there is a win
-			} else if (r.creditswon > 0) {
-				if ((payout - this.wager) < 0) {
-					this.incrementLdws();
-					this.incrementPrizeSizes(0);
-				} else {
+				
+				this.bonuspayout = 0;
+				
+				// Update the current spins result in the prize range
+				if (r.bonusactivated) {
+					this.bonuspayout += payout;
 					this.incrementWins();
-					
-					for (int i = 1; i < prizeranges.size(); i++) {
-						double prizesize = payout / this.wager;
-						if (prizeranges.get(i).isPrizeSizeInRange(prizesize)) {
-							this.incrementPrizeSizes(i);
-							break;
-						}
-					}
-				}
+					this.updateMultiWins(r);
+				} else if (r.creditswon > 0)
+					this.updateWin(r, payout, prizesize);
+				else 
+					this.incrementLosses();
+				
+			// If bonus mode is initially activated
+			} else if (r.bonusactivated && !r.bonusspin) {
+				this.bonuspayout += payout;
+				this.incrementWins();
+				this.updateMultiWins(r);
+			
+			// If in bonus mode
+			} else if (ResultsModel.this.bonusactive) {
+				this.incrementFreeSpins();
+				this.bonuspayout += payout;
+	
+			// If there is a win in regular mode
+			} else if (r.creditswon > 0) {
+				this.updateWin(r, payout, prizesize);
+			// If it is a loss in regular mode
 			} else {
 				this.incrementLosses();
 			}
@@ -3372,6 +3424,44 @@ public class ResultsModel {
 			//TODO check PSE errors here
 		}
 		
+		private void updateMultiWins(Result r) {
+			int wbbonuswin = 0;
+			boolean isMultiWbbWin = false;
+			
+			for (int i : r.getWBBonusCreditWin()) {
+				if (i > 0) {
+					wbbonuswin = i;
+					break;
+				}
+			}
+			
+			// isMultiWbbWin is true if there is a regular win occurs on the same line as the weather beacon bonus win
+			if (wbbonuswin > 0)
+				isMultiWbbWin = (r.creditswon - r.scatter - wbbonuswin) > 0;
+			
+			// If there are multi-regular/wbbonus/fsbonus wins or some regular/wbbonus/fsbonus wins + scatter wins or a multiwbb win
+			if (r.lineswon > 1 || (r.lineswon > 0 && r.scatter > 0) || isMultiWbbWin) 
+				this.multiwins++;
+		}
+		
+		private void updateWin(Result r, double payout, double prizesize) {
+			updateMultiWins(r);
+			
+			if ((payout - this.wager) < 0) {
+				this.incrementLdws();
+				this.incrementPrizeSizes(0);
+			// If the win is a real win
+			} else {
+				this.incrementWins();
+				
+				for (int i = 1; i < prizeranges.size(); i++) {
+					if (prizeranges.get(i).isPrizeSizeInRange(prizesize)) {
+						this.incrementPrizeSizes(i);
+						break;
+					}
+				}
+			}
+		}
 	}
 	
 	// GamblersRuinEntry for each Gamblers Ruin block
@@ -3387,14 +3477,23 @@ public class ResultsModel {
 		private long blocknum = 0;
 		private short numline = 0;
 		
+		private int spinmedian = 0;
+		private double pbmedian = 0;
+		private int spinavg = 0;
+		private double pbavg = 0;
+		private int maxspins = 0;
+		private double maxpb = 0;
+		
 		private double currpeakbalance = 0;
 		
-		private ArrayList<Range> spinranges = new ArrayList<Range>();
-		private ArrayList<Integer> spins = new ArrayList<Integer>();
+		private List<Range> spinranges = new ArrayList<Range>();
+		private List<Integer> spins = new ArrayList<Integer>();
 		
-		private ArrayList<Range> peakbalanceranges = new ArrayList<Range>();
-		private ArrayList<Integer> peakbalances = new ArrayList<Integer>();
+		private List<Range> peakbalanceranges = new ArrayList<Range>();
+		private List<Integer> peakbalances = new ArrayList<Integer>();
 		
+		private List<Integer> allspins = new ArrayList<Integer>();
+		private List<Double> allpbs = new ArrayList<Double>();
 		
 		public GamblersRuinEntry() {
 			currpeakbalance = (double)ResultsModel.this.currgrblock.getBankRoll();
@@ -3403,14 +3502,14 @@ public class ResultsModel {
 			
 			// Initialize the ranges
 			int low = 0;
-			int increment = 500;
+			int increment = 600;
 			for (int i = 0; i < 10; i++) {
 				int high = low + increment;
 				Range r = new Range(low, high);
 				low = high;
 				spinranges.add(i, r);
 			}
-			increment = 5000;
+			increment = 6000;
 			for (int i = 10; i < 14; i++) {
 				int high = low + increment;
 				Range r = new Range(low, high);
@@ -3467,6 +3566,53 @@ public class ResultsModel {
 				}
 			}
 			
+			if (ResultsModel.this.repeatComplete) {
+				this.allspins.add(this.numspins);
+				this.allpbs.add(this.currpeakbalance);
+				ResultsModel.this.repeatComplete = false;
+			}
+			
+			if (ResultsModel.this.blockComplete) {
+				this.allspins.add(this.numspins);
+				this.allpbs.add(this.currpeakbalance);
+				this.calculateMedians();
+				this.calculateAverages();
+				this.updateMax();
+				ResultsModel.this.blockComplete = false;
+			}
+			
+		}
+		
+		private void calculateMedians() {
+			Collections.sort(allspins);
+			Collections.sort(allpbs);
+			
+			int mid_spins = allspins.size() / 2;
+			int mid_pbs = allpbs.size() / 2;
+			
+			this.spinmedian = (allspins.size() % 2 == 1) ? allspins.get(mid_spins)
+						: (allspins.get(mid_spins - 1) + (allspins.get(mid_spins))) / 2;
+			
+			this.pbmedian = (allpbs.size() % 2 == 1) ? allpbs.get(mid_pbs)
+						: (allpbs.get(mid_pbs - 1) + allpbs.get(mid_pbs)) / 2.0;	
+		}
+		
+		private void calculateAverages() {
+			int temp = 0;
+			double temp2 = 0;
+			
+			for (int i : allspins)
+				temp += i;
+			this.spinavg = temp / allspins.size();
+			
+			for (double d : allpbs)
+				temp2 += d;
+			this.pbavg = temp2 / allpbs.size();
+		}
+		
+		private void updateMax() {
+			this.maxspins = Collections.max(allspins);
+			this.maxpb = Collections.max(allpbs);
 		}
 		
 		// Called at the end of each grblock
@@ -3482,6 +3628,16 @@ public class ResultsModel {
 				this.numbonusactivation = 0;
 				this.numspins = 0;
 				this.totalspins = 0;
+				
+				this.spinmedian = 0;
+				this.pbmedian = 0;
+				this.spinavg = 0;
+				this.pbavg = 0;
+				this.maxspins = 0;
+				this.maxpb = 0;
+				
+				this.allpbs.clear();
+				this.allspins.clear();
 				
 				for (int i = 0; i < this.spins.size(); i++)
 					spins.set(i, 0);
@@ -3540,7 +3696,7 @@ public class ResultsModel {
 			return blocknum;
 		}
 
-		public ArrayList<Range> getSpinRanges() {
+		public List<Range> getSpinRanges() {
 			return this.spinranges;
 		}
 		
@@ -3567,12 +3723,36 @@ public class ResultsModel {
 		public int getSpins(int index) {
 			return spins.get(index);
 		}
+		
+		public int getSpinMedian() {
+			return spinmedian;
+		}
+		
+		public double getPeakBalanceMedian() {
+			return pbmedian;
+		}
 
+		public int getMaxSpins() {
+			return maxspins;
+		}
+		
+		public double getMaxPeakBalance() {
+			return maxpb;
+		}
+		
+		public int getAvgSpins() {
+			return spinavg;
+		}
+		
+		public double getAvgPeakBalance() {
+			return pbavg;
+		}
+		
 		public void incrementNumSpins(int index) {
 			this.spins.set(index, spins.get(index) + 1);
 		}
 
-		public ArrayList<Range> getPeakBalanceRanges() {
+		public List<Range> getPeakBalanceRanges() {
 			return peakbalanceranges;
 		}
 		
@@ -3608,29 +3788,14 @@ public class ResultsModel {
 		}
 		
 		public boolean isLossPercentageInRange(double percentage) {
-			if (high == 1)
-				return (percentage <= high && percentage >= low);
-			// when loss percentage is between (0, 0.75]
-			else if (low > 0)
-				return (percentage < high && percentage >= low);
-			
 			// when loss percentage is [-9, infinity)
-			else if (low == -9 && high == -9)
+			if (low == -9 && high == -9)
 				return (percentage <= low);
-			
-			// when loss percentage is between (0, -9)
-			else if (high < 0)
+			// When loss percentage is between [0, -9)
+			else 
 				return (percentage <= high && percentage > low);
 			
-			// when loss percentage = 0
-			else if (low == 0 && high == 0)
-				return percentage == high;
 			
-			// when loss percentage is between (-0.25, 0.25)/0
-			else if (low == 0 || high == 0)
-				return (percentage < high && percentage > low);
-			
-			else return false;
 				
 		}
 		
