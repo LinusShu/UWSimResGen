@@ -15,6 +15,7 @@ import java.util.Map;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Block;
+import uwsimresgen.model.ResultsModel.ForcedFreeSpinEntry;
 import uwsimresgen.model.ResultsModel.GamblersRuinEntry;
 import uwsimresgen.model.ResultsModel.LossPercentageEntry;
 import uwsimresgen.model.ResultsModel.Payline;
@@ -63,11 +64,13 @@ public class Database {
 	static PreparedStatement lps = null;
 	static PreparedStatement grs = null;
 	static PreparedStatement pss = null;
+	static PreparedStatement ffss = null;
 	
 	static int batchRequests = 0;
 	static int lpeBatchRequests = 0;
 	static int greBatchRequests = 0;
 	static int pseBatchRequests = 0;
+	static int ffseBatchRequests = 0;
 	
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
@@ -584,15 +587,17 @@ public class Database {
 						+ "BONUSACTIVATION integer NOT NULL, "
 						+ "WINS integer NOT NULL, "
 						+ "LOSSES integer NOT NULL, "
-						+ "LDWS integer NOT NULL "
+						+ "LDWS integer NOT NULL"
 						+ spinranges 
-						+ ", MAXSPINS integer NOT NULL"
-						+ ", AVGSPINS integer NOT NULL"
-						+ ", SPINMEDIAN integer NOT NULL "
+						+ ", MAX_SPINS integer NOT NULL"
+						+ ", AVG_SPINS integer NOT NULL"
+						+ ", MEDIAN_SPINS integer NOT NULL"
+						+ ", SD_SPINS integer NOT NULL"
 						+ peakbalanceranges
-						+ ", MAXPEAKBALANCE integer NOT NULL"
-						+ ", AVGPEAKBALANCE integer NOT NULL"
-						+ ", PEAKBALANCEMEDIAN integer NOT NULL)";
+						+ ", MAX_PEAKBALANCE integer NOT NULL"
+						+ ", AVG_PEAKBALANCE integer NOT NULL"
+						+ ", MEDIAN_PEAKBALANCE integer NOT NULL" 
+						+ ", SD_PEAKBALANCE integer NOT NULL)";
 				
 				Database.createTable(tableName, query);
 			}
@@ -600,9 +605,9 @@ public class Database {
 			// Otherwise, add the LossPercentageEntry to the table
 			String query = "insert into " + tableName
 					+ "(BLOCKID, NUMOFLINES, NUMOFSPINS, FREESPINS, BONUSACTIVATION, WINS, LOSSES, LDWS" 
-					+ spinrangesI + ", MAXSPINS" + ", AVGSPINS" + ", SPINMEDIAN" 
-					+ peakbalancerangesI + ", MAXPEAKBALANCE" + ", AVGPEAKBALANCE" + ", PEAKBALANCEMEDIAN) "
-					+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?" + spinrangesQ  + peakbalancerangesQ + ")";
+					+ spinrangesI + ", MAX_SPINS" + ", AVG_SPINS" + ", MEDIAN_SPINS" + ", SD_SPINS" 
+					+ peakbalancerangesI + ", MAX_PEAKBALANCE" + ", AVG_PEAKBALANCE" + ", MEDIAN_PEAKBALANCE" + ", SD_PEAKBALANCE) "
+					+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + spinrangesQ  + peakbalancerangesQ + ")";
 			
 			
 			if (grs == null)
@@ -630,7 +635,10 @@ public class Database {
 			index++;
 			
 			grs.setInt(index, gre.getSpinMedian());
-			index ++;
+			index++;
+			
+			grs.setInt(index, gre.getSDSpins());
+			index++;
 
 			for (int i = 0; i < gre.getPeakBalanceRanges().size(); i++) {
 				grs.setInt(index, gre.getPeakBalance(i));
@@ -644,6 +652,9 @@ public class Database {
 			index++;
 			
 			grs.setInt(index, (int)gre.getPeakBalanceMedian());
+			index++;
+			
+			grs.setInt(index, (int)gre.getSDPeakBalance());
 			
 			grs.addBatch();
 			greBatchRequests++;
@@ -737,6 +748,61 @@ public class Database {
 			}
 			
 			
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	
+	public static void insertIntoTable(String tableName, ForcedFreeSpinEntry ffse, int blocksize)
+			throws SQLException {
+		tableName = tableName.toUpperCase();
+		// If does not exist, create the table
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName + " "
+					+ "(BLOCKNUMBER bigint NOT NULL, "
+					+ "INI_FREESPINS smallint NOT NULL, "
+					+ "TOTAL_SPINS integer NOT NULL, "
+					+ "TOTAL_CREDITSWON integer NOT NULL, "
+					+ "MAX_SPINS integer NOT NULL, "
+					+ "MEDIAN_SPINS integer NOT NULL, "
+					+ "MAX_CREDITSWON integer NOT NULL, "
+					+ "MEDIAN_CREDITSWON integer NOT NULL, "
+					+ "LOSSES integer NOT NULL, "
+					+ "RETRRIGER_3 integer NOT NULL, "
+					+ "RETRRIGER_10 integer NOT NULL, "
+					+ "RETRRIGER_15 integer NOT NULL)";
+			Database.createTable(tableName, query);
+		}
+
+		// Otherwise, add it to DB.
+		String query = "insert into "
+				+ tableName
+				+ "(BLOCKNUMBER, INI_FREESPINS, TOTAL_SPINS, TOTAL_CREDITSWON, " +
+				"MAX_SPINS, MEDIAN_SPINS, MAX_CREDITSWON, MEDIAN_CREDITSWON, " +
+				"LOSSES, RETRRIGER_3, RETRRIGER_10, RETRRIGER_15) "
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
+		try {
+			if (ffss == null)
+				ffss = conn.prepareStatement(query);
+			ffss.setLong(1, ffse.getBlockNum());
+			ffss.setShort(2, ffse.getInitialFreeSpins());
+			ffss.setInt(3, ffse.getTotalSpins());
+			ffss.setInt(4, ffse.getTotalCreditsWon());
+			ffss.setInt(5, ffse.getMaxSpins());
+			ffss.setInt(6, ffse.getSpinMedian());
+			ffss.setInt(7, ffse.getMaxCreditsWon());
+			ffss.setInt(8, ffse.getCreditsWonMedian());
+			ffss.setInt(9, ffse.getLossSpins());
+			ffss.setInt(10, ffse.getBonusRetriggers().get(0));
+			ffss.setInt(11, ffse.getBonusRetriggers().get(1));
+			ffss.setInt(12, ffse.getBonusRetriggers().get(2));
+
+			ffss.addBatch();
+			ffseBatchRequests++;
+			if (ffseBatchRequests >= blocksize) {
+				ffseBatchRequests = 0;
+				ffss.executeBatch();
+			}
 		} catch (SQLException e) {
 			throw e;
 		}
@@ -881,6 +947,11 @@ public class Database {
 			if (pss != null) {
 				pss.close();
 				pss = null;
+			}
+			
+			if (ffss != null) {
+				ffss.close();
+				ffss = null;
 			}
 			conn.commit();
 			DriverManager.getConnection(URL_SHUTDOWN);

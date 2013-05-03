@@ -19,14 +19,13 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
 		Dimension dim = toolkit.getScreenSize();
 		
 		JFrame f = new JFrame();
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setSize(800,800);
+		f.setSize(800, 850);
 		f.setLocation( (int)(dim.width * 0.5 - f.getSize().width * 0.5), (int)(dim.height * 0.5 - f.getSize().height * 0.5));
 		f.setVisible(true);
 		f.setTitle("UW Sim Results Generator");

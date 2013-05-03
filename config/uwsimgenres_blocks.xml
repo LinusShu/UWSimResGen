@@ -47,25 +47,15 @@
 		-->
 		
 		<grblock numlines="1"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="2"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" /> 
-		<grblock numlines="3"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="4"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="5"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="6"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="7"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="8"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="9"  linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
 		<grblock numlines="10" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="11" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="12" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="13" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="14" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="15" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="16" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="17" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="18" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
-		<grblock numlines="19" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
 		<grblock numlines="20" linebet="1" bankroll="100" denomination="100" blockrepeats="10000" />
 		
 	</grblocks>
+	
+	<ffsblocks>
+		<!--  -->
+		<ffsblock numlines="1" initialfs="3" linebet="1" denomination="100" blockrepeats="10000" />
+		<ffsblock numlines="1" initialfs="10" linebet="1" denomination="100" blockrepeats="10000" />
+		<ffsblock numlines="1" initialfs="15" linebet="1" denomination="100" blockrepeats="10000" />
+	</ffsblocks>
 </data>

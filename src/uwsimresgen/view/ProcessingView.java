@@ -32,6 +32,9 @@ public class ProcessingView extends JPanel implements IView {
 			+ ", " + ResultsModel.BONUS_PAYTABLE_TABLE_NAME
 			+ ", " + ResultsModel.LOSS_PER_TABLE_NAME
 			+ ", " + ResultsModel.REELMAPPINGS_TABLE_NAME
+			+ ", " + ResultsModel.GAMBLERS_RUIN_TABLE_NAME
+			+ ", " + ResultsModel.PRIZE_SIZES_TABLE_NAME
+			+ ", " + ResultsModel.FORCED_FREE_SPINS_TABLE_NAME
 		);
 	
 	private JLabel outputLogLabel = new JLabel("Output Log Location");
@@ -43,7 +46,6 @@ public class ProcessingView extends JPanel implements IView {
 	
 	private JLabel totalSpinsLabel = new JLabel("0");
 	private JLabel currSpinLabel = new JLabel("0");
-	//private JLabel currConsumedSpinLabel = new JLabel("0");
 	
 	private ResultsModel model;
 		
@@ -66,7 +68,6 @@ public class ProcessingView extends JPanel implements IView {
 		
 		this.pauseButton.setEnabled(false);
 		this.cancelButton.setEnabled(false);
-		//this.pb.setIndeterminate(true);
 		this.processingLabel.setFont(f);
 		this.dbTableNameFormatValueLabel.setForeground(Color.GRAY);
 		this.dbTableNameListValueLabel.setForeground(Color.GRAY);
@@ -153,7 +154,7 @@ public class ProcessingView extends JPanel implements IView {
 		this.gbc.gridwidth = 1;
 		this.gbc.weightx = 1;
 		this.gbc.anchor = GridBagConstraints.WEST;
-		//jp2.add(currConsumedSpinLabel, gbc);
+
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 0;
 		this.gbc.weightx = 2;
@@ -274,12 +275,18 @@ public class ProcessingView extends JPanel implements IView {
 				&& this.model.getCurrGRBlock() != null) {
 			this.totalSpinsLabel.setText("Current Balance: " + Double.toString(this.model.getCurrBalance()));
 			this.pb.setVisible(false);
+		
+		// If in Forced Free Spins mode
+		} else if (this.model.getGenForcedFreeSpins()
+				&& this.model.getCurrBlock() != null) {
+			this.pb.setVisible(false);
+			this.totalSpinsLabel.setText("Free Spins Left: " + Integer.toString(this.model.getFreeSpins()));
 		} else {
 			this.totalSpinsLabel.setText("Spins: " + Integer.toString(this.model.getTotalSpins()));
 		}
 		
 		this.pb.setMaximum(this.model.getTotalSpins());
-		this.pb.setValue(this.model.getCurrSpin()); //getCurrConsumedSpin());	
+		this.pb.setValue(this.model.getCurrSpin()); 	
 		this.pb.repaint();
 	}
 
