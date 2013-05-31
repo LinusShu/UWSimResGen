@@ -24,6 +24,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 import uwsimresgen.model.ResultsModel;
+import uwsimresgen.model.ResultsModel.Mode;
 
 public class HomeView extends JPanel implements IView  {
 
@@ -43,30 +44,13 @@ public class HomeView extends JPanel implements IView  {
 	private JLabel dbnameLabel = new JLabel("DB Name");
 	private JTextField dbnameTF = new JTextField(20);
 	private JButton dbnameButton = new JButton("Reset");
-	
-	
-	/* TODO introduce game mode radio buttons
-	private JLabel balanceLabel = new JLabel("Balance (dollars)");
-	private JLabel balanceUnlimitedLabel = new JLabel("Unlimited?");
-	private JLabel numLinesLabel = new JLabel("Lines");
-	private JLabel lineBetLabel = new JLabel("LineBet");
-	private JLabel numSpinsLabel = new JLabel("Spins");
-	private JLabel denominationLabel = new JLabel("Denomination");
-	
-	private JCheckBox balanceUnlimitedCB = new JCheckBox("Unlimited?");
-	private JTextField balanceTF = new JTextField(20);
-	private JTextField numLinesTF = new JTextField(5);
-	private JTextField lineBetTF = new JTextField(5);
-	private JTextField numSpinsTF = new JTextField(20);
-	private JTextField denominationTF = new JTextField(10);
-	
 		
-	private JLabel simulatorMode = new JLabel("Simulator Mode:");
-	private JRadioButton genRandomSpins = new JRadioButton("Random Spins");
-	private JRadioButton genAllStops = new JRadioButton("All Reel Stops");
-	private JRadioButton genGamblersRuin = new JRadioButton("Gamblers Ruin");
-	*/
+	private JLabel modeLabel = new JLabel("Game Modes:");
+	private JRadioButton msButton = new JRadioButton("Money Storm");
+	private JRadioButton dtButton = new JRadioButton("Dolphin Treasure");
+	private ButtonGroup modeGroup = new ButtonGroup();
 	
+	private JLabel optionsLabel = new JLabel("Options:");
 	private JCheckBox genAllStopsCheckBox = new JCheckBox("Generate All Reel Stops?");
 	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
 	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
@@ -102,6 +86,10 @@ public class HomeView extends JPanel implements IView  {
 		this.blocksFileTF.setEditable(false);
 		this.blocksFileTF.setBackground(Color.WHITE);
 		
+		// Group up mode radio buttons
+		modeGroup.add(msButton);
+		modeGroup.add(dtButton);
+		
 		this.layout = new GridBagLayout();
 		this.gbc = new GridBagConstraints();
 		
@@ -115,9 +103,11 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 1;
 		this.gbc.gridy = 1;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.add(selectFileTF, gbc);
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 1;
+		this.gbc.fill = GridBagConstraints.NONE;
 		this.add(selectFile, gbc);
 		
 		this.gbc.gridx = 0;
@@ -127,9 +117,11 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 1;
 		this.gbc.gridy = 2;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.add(blocksFileTF, gbc);
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 2;
+		this.gbc.fill = GridBagConstraints.NONE;
 		this.add(blocksFile, gbc);
 		
 		this.gbc.gridx = 0;
@@ -139,10 +131,12 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 1;
 		this.gbc.gridy = 3;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.add(prefixTF, gbc);
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 3;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.NONE;
 		this.add(prefixButton, gbc);
 		
 		this.gbc.gridx = 0;
@@ -152,124 +146,81 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 1;
 		this.gbc.gridy = 4;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.add(dbnameTF, gbc);
 		this.gbc.gridx = 2;
 		this.gbc.gridy = 4;
 		this.gbc.anchor = GridBagConstraints.WEST;
+		this.gbc.fill = GridBagConstraints.NONE;
 		this.add(dbnameButton, gbc);
 		
-		
-		
-		// TODO reorganize the layouts here	
-		JPanel jp = new JPanel();
-		jp.setLayout(new GridBagLayout());
-		
-		this.gbc.insets.set(0, 10, 0, 0);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 0;
-		this.gbc.gridwidth = 1;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		jp.add(numlinesLabel, gbc);
-		
-		this.gbc.gridx = 1;
-		this.gbc.gridy = 0;
-		this.gbc.gridwidth = 1;
-		this.gbc.anchor = GridBagConstraints.WEST;
-		jp.add(numlinesTF, gbc);		
-		
-		this.gbc.gridx = 2;
-		this.gbc.gridy = 0;
-		this.gbc.gridwidth = 1;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		jp.add(genAllStopsCheckBox, gbc);
+		// Laying out game mode radio buttons
+		msButton.setSelected(true);
+		JPanel modePanel = new JPanel();
+		modePanel.setLayout(new GridLayout(0, 1));
+		modePanel.add(modeLabel);
+		modePanel.add(msButton);
+		modePanel.add(dtButton);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 5;
-		this.gbc.gridwidth = 3;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.gbc.insets.set(10, 0, 0, 0);
-		this.add(jp, gbc);			
+		this.gbc.anchor = GridBagConstraints.FIRST_LINE_START;
+		this.gbc.insets.set(10, 0, 0, 50);
+		this.add(modePanel, gbc);
 		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 6;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genAllBonusSpinsCheckBox, gbc);
-
-		
-		/* TODO lay out the radio button group for the game modes
-		JPanel optionsPan = new JPanel();
-		optionsPan.setLayout(new GridBagLayout());
-		
-		ButtonGroup modeButtons = new ButtonGroup();
-		modeButtons.add(genRandomSpins);
-		modeButtons.add(genAllStops);
-		modeButtons.add(genGamblersRuin);
-
+		// Laying out options 
+		JPanel optionsPanel = new JPanel(new GridBagLayout());
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 0;
-		this.gbc.anchor = GridBagConstraints.PAGE_START;
-		this.gbc.insets.set(0, 0, 0, 0);
-		optionsPan.add(simulatorMode, gbc);
+		this.gbc.anchor = GridBagConstraints.LINE_START;
+		this.gbc.insets.set(0, 20, 0, 0);
+		optionsPanel.add(optionsLabel, gbc);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 1;
-		this.gbc.anchor = GridBagConstraints.LINE_START;
-		this.gbc.insets.set(10, 10, 0, 0);
-		optionsPan.add(genRandomSpins, gbc);
+		this.gbc.insets.set(0, 30, 0, 0);
+		optionsPanel.add(genAllStopsCheckBox, gbc);
+		
+		this.gbc.gridx = 1;
+		this.gbc.gridy = 1;
+		optionsPanel.add(numlinesLabel, gbc);
+		
+		this.gbc.gridx = 2;
+		this.gbc.gridy = 1;
+		optionsPanel.add(numlinesTF, gbc);				
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 2;
-		this.gbc.anchor = GridBagConstraints.LINE_START;
-		this.gbc.insets.set(5, 10, 0, 0);
-		optionsPan.add(genAllStops, gbc);
+		optionsPanel.add(genAllBonusSpinsCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 3;
-		this.gbc.anchor = GridBagConstraints.LINE_START;
-		this.gbc.insets.set(5, 10, 0, 0);
-		optionsPan.add(genGamblersRuin, gbc);
+		optionsPanel.add(genGamblersRuinCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 4;
+		optionsPanel.add(genPrizeSizeCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 5;
+		optionsPanel.add(genForcedFreeSpinsCheckBox, gbc);
+		
+		this.gbc.gridx = 0;
+		this.gbc.gridy = 6;
+		optionsPanel.add(genNoTableCheckBox, gbc);
 		
 		this.gbc.gridx = 1;
-		this.gbc.gridy = 0;
-		this.gbc.anchor = GridBagConstraints.FIRST_LINE_END;
-		this.gbc.gridwidth = 3;
-		this.gbc.fill = GridBagConstraints.HORIZONTAL;
-		this.gbc.insets.set(0, 0, 0, 0);
-		optionsPan.add(genAllBonusSpinsCheckBox);
+		this.gbc.gridy = 5;
+		this.gbc.anchor = GridBagConstraints.FIRST_LINE_START;
+		this.gbc.insets.set(4, 10, 0, 10);
+		this.add(optionsPanel, gbc);
 		
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 8;
-		this.gbc.anchor = GridBagConstraints.WEST;
-		this.gbc.insets.set(0, 0, 0, 0);
-		this.add(optionsPan, gbc);*/
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 7;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genGamblersRuinCheckBox, gbc);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 8;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genPrizeSizeCheckBox, gbc);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 9;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genForcedFreeSpinsCheckBox, gbc);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 10;
-		this.gbc.anchor = GridBagConstraints.EAST;
-		this.add(genNoTableCheckBox, gbc);
-		
-		this.gbc.gridx = 0;
-		this.gbc.gridy = 11;
+		this.gbc.gridy = 6;
 		this.gbc.gridwidth = 3;
 		this.gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.gbc.anchor = GridBagConstraints.CENTER;
-		this.gbc.insets.set(40, 0, 0, 0);
+		this.gbc.insets.set(20, 0, 0, 0);
 		this.add(runButton, gbc);			
 	}
 	
@@ -340,6 +291,7 @@ public class HomeView extends JPanel implements IView  {
 			@Override
 			public void focusLost(FocusEvent arg0) {
 				HomeView.this.model.setTablePrefix(prefixTF.getText().trim());
+	
 			}
 						
 		});
@@ -378,6 +330,21 @@ public class HomeView extends JPanel implements IView  {
 			
 		});
 		
+		
+		this.msButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.MONEY_STORM);
+			}
+		});
+		
+		
+		this.dtButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.DOLPHIN_TREASURE);
+			}
+		});
 		
 		this.genAllStopsCheckBox.addItemListener(new ItemListener() {
 
@@ -536,10 +503,6 @@ public class HomeView extends JPanel implements IView  {
 		}
 	}
 	
-	
-	
-	
-	
 	@Override
 	public void updateView() {
 		
@@ -563,6 +526,9 @@ public class HomeView extends JPanel implements IView  {
 			this.prefixTF.setText(this.model.getTablePrefix());	
 			this.dbnameTF.setText(this.model.getDBName());
 			this.numlinesTF.setText(Short.toString(this.model.getGenAllNumLines()));
+			
+			this.numlinesLabel.setVisible(false);
+			this.numlinesTF.setVisible(false);
 		}
 		
 		
@@ -570,6 +536,9 @@ public class HomeView extends JPanel implements IView  {
 			this.runButton.setEnabled(false);
 			this.selectFile.setEnabled(false);
 			this.blocksFile.setEnabled(false);
+			
+			this.msButton.setEnabled(false);
+			this.dtButton.setEnabled(false);
 			
 			this.genAllStopsCheckBox.setEnabled(false);
 			this.genNoTableCheckBox.setEnabled(false);
@@ -588,14 +557,6 @@ public class HomeView extends JPanel implements IView  {
 		} else {
 			this.runButton.setEnabled(true);
 			this.selectFile.setEnabled(true);
-			
-			this.genAllStopsCheckBox.setEnabled(true);
-			this.genNoTableCheckBox.setEnabled(true);
-			this.genAllBonusSpinsCheckBox.setEnabled(true);
-			this.genGamblersRuinCheckBox.setEnabled(true);
-			this.genPrizeSizeCheckBox.setEnabled(true);
-			this.genForcedFreeSpinsCheckBox.setEnabled(true);
-			
 			this.prefixButton.setEnabled(true);
 			this.dbnameButton.setEnabled(true);
 			this.blocksFileTF.setEnabled(true);
@@ -603,6 +564,25 @@ public class HomeView extends JPanel implements IView  {
 			this.prefixTF.setEnabled(true);
 			this.dbnameTF.setEnabled(true);
 			
+			if (this.model.getMode() == Mode.MONEY_STORM) {
+				this.genAllStopsCheckBox.setEnabled(true);
+				this.genNoTableCheckBox.setEnabled(true);
+				this.genAllBonusSpinsCheckBox.setEnabled(true);
+				this.genGamblersRuinCheckBox.setEnabled(true);
+				this.genPrizeSizeCheckBox.setEnabled(true);
+				this.genForcedFreeSpinsCheckBox.setEnabled(true);
+			} else {
+				this.genAllBonusSpinsCheckBox.setEnabled(false);
+				this.genGamblersRuinCheckBox.setEnabled(false);
+				this.genPrizeSizeCheckBox.setEnabled(false);
+				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+			}
+			
+			this.numlinesLabel.setVisible(false);
+			this.numlinesTF.setVisible(false);
+			
+			this.msButton.setEnabled(true);
+			this.dtButton.setEnabled(true);
 			
 			if( this.model.getGenAllStops() ) {
 				this.blocksFile.setEnabled(false);
@@ -613,6 +593,9 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				
+				this.numlinesLabel.setVisible(true);
+				this.numlinesTF.setVisible(true);
 				
 			}
 			

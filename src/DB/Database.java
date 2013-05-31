@@ -478,15 +478,17 @@ public class Database {
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
 					+ "LDWS integer NOT NULL"
-					+ ranges + bas + ")";
+					+ ranges 
+					+ ", MEDIAN integer NOT NULL"
+					+ bas + ")";
 			Database.createTable(tableName, query);
 		}
 		
 		// Otherwise, add the LossPercentageEntry to the table
 		String query = "insert into " + tableName
 				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVG_LOSSBALANCE, SD_LOSSBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
-				+ rangesI + basI + ") "
-				+ "values(?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
+				+ rangesI + ", MEDIAN" + basI + ") "
+				+ "values(?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
 		
 		try {
 			if (lps == null)
@@ -508,6 +510,9 @@ public class Database {
 				lps.setInt(index, lpe.getLossPercentage(i));
 				index++;
 			}
+			
+			lps.setInt(index, lpe.getLossPercentageMedian());
+			index++;
 			
 			for (int i = 0; i < lpe.getBonusActivations().size(); i++) {
 				lps.setInt(index, lpe.getAvgBonusActivation(i));
@@ -597,7 +602,8 @@ public class Database {
 						+ ", MAX_PEAKBALANCE integer NOT NULL"
 						+ ", AVG_PEAKBALANCE integer NOT NULL"
 						+ ", MEDIAN_PEAKBALANCE integer NOT NULL" 
-						+ ", SD_PEAKBALANCE integer NOT NULL)";
+						+ ", SD_PEAKBALANCE integer NOT NULL" 
+						+ ", PAYBACKPERCENTAGE float NOT NULL)";
 				
 				Database.createTable(tableName, query);
 			}
@@ -606,8 +612,8 @@ public class Database {
 			String query = "insert into " + tableName
 					+ "(BLOCKID, NUMOFLINES, NUMOFSPINS, FREESPINS, BONUSACTIVATION, WINS, LOSSES, LDWS" 
 					+ spinrangesI + ", MAX_SPINS" + ", AVG_SPINS" + ", MEDIAN_SPINS" + ", SD_SPINS" 
-					+ peakbalancerangesI + ", MAX_PEAKBALANCE" + ", AVG_PEAKBALANCE" + ", MEDIAN_PEAKBALANCE" + ", SD_PEAKBALANCE) "
-					+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + spinrangesQ  + peakbalancerangesQ + ")";
+					+ peakbalancerangesI + ", MAX_PEAKBALANCE" + ", AVG_PEAKBALANCE" + ", MEDIAN_PEAKBALANCE" + ", SD_PEAKBALANCE" + ", PAYBACKPERCENTAGE) "
+					+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + spinrangesQ  + peakbalancerangesQ + ")";
 			
 			
 			if (grs == null)
@@ -655,6 +661,9 @@ public class Database {
 			index++;
 			
 			grs.setInt(index, (int)gre.getSDPeakBalance());
+			index++;
+			
+			grs.setFloat(index, (float)gre.getPayBackPercentage());
 			
 			grs.addBatch();
 			greBatchRequests++;
@@ -763,8 +772,10 @@ public class Database {
 					+ "INI_FREESPINS smallint NOT NULL, "
 					+ "TOTAL_SPINS integer NOT NULL, "
 					+ "TOTAL_CREDITSWON integer NOT NULL, "
+					+ "MIN_SPINS integer NOT NULL, "
 					+ "MAX_SPINS integer NOT NULL, "
 					+ "MEDIAN_SPINS integer NOT NULL, "
+					+ "MIN_CREDITSWON integer NOT NULL, "
 					+ "MAX_CREDITSWON integer NOT NULL, "
 					+ "MEDIAN_CREDITSWON integer NOT NULL, "
 					+ "LOSSES integer NOT NULL, "
@@ -778,9 +789,9 @@ public class Database {
 		String query = "insert into "
 				+ tableName
 				+ "(BLOCKNUMBER, INI_FREESPINS, TOTAL_SPINS, TOTAL_CREDITSWON, " +
-				"MAX_SPINS, MEDIAN_SPINS, MAX_CREDITSWON, MEDIAN_CREDITSWON, " +
+				"MIN_SPINS, MAX_SPINS, MEDIAN_SPINS, MIN_CREDITSWON, MAX_CREDITSWON, MEDIAN_CREDITSWON, " +
 				"LOSSES, RETRRIGER_3, RETRRIGER_10, RETRRIGER_15) "
-				+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		try {
 			if (ffss == null)
 				ffss = conn.prepareStatement(query);
@@ -788,14 +799,16 @@ public class Database {
 			ffss.setShort(2, ffse.getInitialFreeSpins());
 			ffss.setInt(3, ffse.getTotalSpins());
 			ffss.setInt(4, ffse.getTotalCreditsWon());
-			ffss.setInt(5, ffse.getMaxSpins());
-			ffss.setInt(6, ffse.getSpinMedian());
-			ffss.setInt(7, ffse.getMaxCreditsWon());
-			ffss.setInt(8, ffse.getCreditsWonMedian());
-			ffss.setInt(9, ffse.getLossSpins());
-			ffss.setInt(10, ffse.getBonusRetriggers().get(0));
-			ffss.setInt(11, ffse.getBonusRetriggers().get(1));
-			ffss.setInt(12, ffse.getBonusRetriggers().get(2));
+			ffss.setInt(5, ffse.getMinSpins());
+			ffss.setInt(6, ffse.getMaxSpins());
+			ffss.setInt(7, ffse.getSpinMedian());
+			ffss.setInt(8, ffse.getMinCreditsWon());
+			ffss.setInt(9, ffse.getMaxCreditsWon());
+			ffss.setInt(10, ffse.getCreditsWonMedian());
+			ffss.setInt(11, ffse.getLossSpins());
+			ffss.setInt(12, ffse.getBonusRetriggers().get(0));
+			ffss.setInt(13, ffse.getBonusRetriggers().get(1));
+			ffss.setInt(14, ffse.getBonusRetriggers().get(2));
 
 			ffss.addBatch();
 			ffseBatchRequests++;
