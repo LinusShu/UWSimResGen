@@ -33,7 +33,7 @@ import DB.Database;
 
 public class ResultsModel {
 
-	public static String DEFAULT_TABLE_PREFIX = "UWSlotsGen";
+	public static String DEFAULT_TABLE_PREFIX = "MoneyStormGen";
 	public static String RESULTS_TABLE_NAME = "SpinResults";
 	public static String BASE_PAYTABLE_TABLE_NAME = "BasePaytable";
 	public static String BONUS_PAYTABLE_TABLE_NAME = "BonusPaytable";
@@ -45,7 +45,10 @@ public class ResultsModel {
 	public static String GAMBLERS_RUIN_TABLE_NAME = "GamblersRuin";
 	public static String PRIZE_SIZES_TABLE_NAME = "PrizeSizes";
 	public static String FORCED_FREE_SPINS_TABLE_NAME = "ForcedFreeSpins";
+	public static String STREAKS_TABLE_PREFIX = "Streaks";
 
+	public static String DT_TABLE_PREFIX = "DolphinTreasure";
+	
 	public static enum Mode {
 		MONEY_STORM, DOLPHIN_TREASURE
 	}
@@ -151,6 +154,7 @@ public class ResultsModel {
 	private GamblersRuinEntry currgre = null;
 	private PrizeSizeEntry currpze = null;
 	private ForcedFreeSpinEntry currffs = null;
+	private StreaksEntry currse = null;
 	
 	private boolean bonusactive = false;
 
@@ -166,6 +170,7 @@ public class ResultsModel {
 	private File blocksfile = null;
 	
 	private String tableprefix = DEFAULT_TABLE_PREFIX;
+	private String dttableprefix = DT_TABLE_PREFIX;
 	private String tablesuffix = "";
 	private Boolean suffixAvailable = false;
 
@@ -176,9 +181,13 @@ public class ResultsModel {
 	private OutputLog outputLog;
 	
 	private String scatter_symbol;
+	private char substitute_symbol;
 	private String wbbonus_sequence;
 	
 	/* Dolphin Treasure variables */
+	public static String DP_BASE_HIT_TABLE_NAME = "BaseHitTable";
+	public static String DP_BONUS_HIT_TABLE_NAME = "BonusHitTable";
+	
 	private List<PaytableEntry> dtpaytable = new ArrayList<PaytableEntry>();
 	private List<Integer> dtscatterpaytable = new ArrayList<Integer>();
 	
@@ -431,6 +440,10 @@ public class ResultsModel {
 	public String getTablePrefix() {
 		return this.tableprefix;
 	}
+	
+	public String getDTTablePrefix() {
+		return this.dttableprefix;
+	}
 
 	public String getTableSuffix() {
 		if (this.suffixAvailable)
@@ -444,7 +457,10 @@ public class ResultsModel {
 	}
 
 	private String buildDBTableName(String tablename) {
-		return getTablePrefix() + "_" + tablename + "_" + getTableSuffix();
+		if (this.mode == Mode.MONEY_STORM)
+			return getTablePrefix() + "_" + tablename + "_" + getTableSuffix();
+		else 
+			return getDTTablePrefix() + "_" + tablename + "_" + getTableSuffix();
 	}
 
 	public String getBlockDBTableName() {
@@ -489,6 +505,18 @@ public class ResultsModel {
 	
 	public String getForcedFreeSpinsDBTableName() {
 		return this.buildDBTableName(ResultsModel.FORCED_FREE_SPINS_TABLE_NAME);
+	}
+	
+	public String getDTBaseHitTableName() {
+		return this.buildDBTableName(ResultsModel.DP_BASE_HIT_TABLE_NAME);
+	}
+	
+	public String getDTBonusHitTableName() {
+		return this.buildDBTableName(ResultsModel.DP_BONUS_HIT_TABLE_NAME);
+	}
+	
+	public String getStreaksTableName() {
+		return this.buildDBTableName(ResultsModel.STREAKS_TABLE_PREFIX);
 	}
 	
 	public String getOutputLogFilePath() {
@@ -559,14 +587,19 @@ public class ResultsModel {
 	
 	public void incrementBaseHit(String sequence, int payout) {
 		SimpleEntry<String, Integer> se = new SimpleEntry<String, Integer>(sequence, payout);
-		Integer value = new Integer(this.basehittable.get(se) + 1);
+		Integer value = (basehittable.containsKey(se)) ? 
+				new Integer(this.basehittable.get(se) + 1) :
+				new Integer(1);
 		
 		this.basehittable.put(se, value);
 	}
 	
 	public void incrementBonusHit(String sequence, int payout) {
 		SimpleEntry<String, Integer> se = new SimpleEntry<String, Integer>(sequence, payout);
-		Integer value = new Integer(this.bonushittable.get(se) + 1);
+		
+		Integer value = (bonushittable.containsKey(se)) ? 
+				new Integer(this.bonushittable.get(se) + 1) :
+				new Integer(1);
 		
 		this.bonushittable.put(se, value);
 	}
@@ -676,14 +709,15 @@ public class ResultsModel {
 	}
 
 	public boolean isSetupValid() {
-		if (this.configfile != null
-				&& (this.blocksfile != null || this.getGenAllStops())
-				&& this.getDBName().length() > 0
-				&& this.getTablePrefix().length() > 0) {
-			return true;
-		}
+		boolean isFilesValid = this.configfile != null
+				&& (this.blocksfile != null || this.getGenAllStops());
+		boolean isNamesValid = this.getDBName().length() > 0
+				&& this.getTablePrefix().length() > 0 ;
+		
+		boolean isNumLinesValid = (this.mode == Mode.DOLPHIN_TREASURE) ?
+				this.getGenAllNumLines() <= 9 : this.getGenAllNumLines() <= 20;
 
-		return false;
+		return isFilesValid && isNamesValid && isNumLinesValid;
 	}
 
 	public void addErrorToLog(String err) {
@@ -708,7 +742,8 @@ public class ResultsModel {
 		try {
 			Database.createConnection();
 			Database.setMaxLines(ResultsModel.this.paylines.size());
-
+			Database.setMode(ResultsModel.this.mode);
+			
 			// Add symbols to the database
 			if (ResultsModel.this.symbols != null
 					&& ResultsModel.this.symbols.size() > 0) {
@@ -782,7 +817,7 @@ public class ResultsModel {
 					PaytableEntry paytableEntry = ResultsModel.this.dtpaytable
 							.get(i);
 					paytableEntry.setEntryID(i + 1);
-					Database.insertIntoTable(
+					Database.insertIntoDTTable(
 							getBasePaytableDBTableName(),
 							paytableEntry);
 				}
@@ -1032,8 +1067,6 @@ public class ResultsModel {
 
 	
 	protected void doDolphinTreasureMode() {
-		int total_freespin = 0;
-		int extra_freespin = 0;
 		boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 		Result pre_result = null;
 		int ts = 0;
@@ -1068,14 +1101,13 @@ public class ResultsModel {
 						ResultsModel.this.checkBonusState();
 						// Reset total_freespin and game mode
 						if (! ResultsModel.this.bonusactive) {
-							total_freespin = 0;
 							ResultsModel.this.simulator.setSeqStops(orign_mode);
 						}
 						
 						Result r = ResultsModel.this.simulator
 								.simulateSpin();
+						
 						if (r != null) {
-
 							r.setRecordNumber(ResultsModel.this
 									.getCurrSpin() + 1);
 							r.setBlockNumber(ResultsModel.this.blocks
@@ -1083,37 +1115,19 @@ public class ResultsModel {
 									.getBlockNumber());
 							r.setRepeatNumber(ResultsModel.this.currblockrepeat);
 							
-							// Update the unique prizes hash tables
-							updateUniquePrizes(r);
-							
 							// If there are free spins awarded
 							if (r.freespinsawarded > 0) { 
-								total_freespin += r.freespinsawarded;
-								
-								// Check if the number of free spins awarded exceeds the allowed
-								if (total_freespin > ResultsModel.this.MAX_FREESPINS) 
-									extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
-								else 
-									extra_freespin = r.freespinsawarded;
-								
-								// Update the BonusHitCounts list if not in bonus mode
-								if (!r.bonusspin)
-									ResultsModel.this.updateBonusSpinCounts(r.freespinsawarded);
-								
-								
-								ResultsModel.this.addFreeSpins(extra_freespin);
+								ResultsModel.this.addFreeSpins(r.freespinsawarded);
 							}
 							
 							
 							// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
-							if (orign_mode || ResultsModel.this.genAllBonusSpins && r.bonusactivated) {
-								ts += extra_freespin;
+							if (orign_mode && r.bonusactivated) {
+								ts += r.freespinsawarded;
 								ResultsModel.this.setTotalSpins(ts);
 								ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
-								.addNumSpins(extra_freespin);
+								.addNumSpins(r.freespinsawarded);
 								ResultsModel.this.simulator.setSeqStops(false);
-								ResultsModel.this.currlpe.incrementNumFreeSpins(extra_freespin);
-								extra_freespin = 0;
 							}
 
 							
@@ -1137,14 +1151,6 @@ public class ResultsModel {
 							}
 
 							ResultsModel.this.incrementCurrSpin();
-							
-							
-							// Update the PrizeSizeEntry if needed
-							if (ResultsModel.this.genPrizeSize)
-								currpze.updatePrizeSizeEntry(r);
-							
-							// Update the LossPercentageTable entry
-							ResultsModel.this.updateLPE(r);
 							
 							pre_result = r;
 							
@@ -1178,14 +1184,15 @@ public class ResultsModel {
 					if (ResultsModel.this.createSpinTable)
 						Database.insertIntoTable(ResultsModel.this
 								.getSpinResultsDBTableName(), pre_result);
-					}
-				
-				// Update the base & bonus hit counts
-				Database.updateTableHit(ResultsModel.this.getBasePaytableDBTableName(), 
-						ResultsModel.this.basehittable);
+				}
 				
 				Database.flushBatch();
-
+				
+				Database.insertIntoTable(ResultsModel.this.getDTBaseHitTableName(), basehittable);
+				Database.flushBatch();
+				Database.insertIntoTable(ResultsModel.this.getDTBonusHitTableName(), bonushittable);
+				Database.flushBatch();
+				
 				ResultsModel.this.stop();
 				
 			} catch (Exception e) {
@@ -1348,7 +1355,6 @@ public class ResultsModel {
 					ResultsModel.this.checkBonusState();
 					// Reset total free spin count when no longer in bonus state
 					if (!ResultsModel.this.bonusactive) {
-						//TODO stop here
 						total_freespin = 0;
 					}
 					
@@ -1970,7 +1976,7 @@ public class ResultsModel {
 			this.readPaylines(doc);
 			
 			if (mode == Mode.DOLPHIN_TREASURE) {
-				this.readDPPaytable(doc);
+				this.readDTPaytable(doc);
 			} else {
 				this.readBasePaytable(doc);
 				this.readBonusPaytable(doc);
@@ -2024,6 +2030,8 @@ public class ResultsModel {
 					
 					if (type == SymbolType.SCATTER)
 						this.scatter_symbol = alias;
+					else if (type == SymbolType.SUBSTITUTE)
+						this.substitute_symbol = alias.charAt(0);
 				}
 			}
 		}
@@ -2200,7 +2208,7 @@ public class ResultsModel {
 		}
 	}
 	
-	private void readDPPaytable(Document doc) {
+	private void readDTPaytable(Document doc) {
 		for (int i = 0; i < 5; i++)
 			this.dtscatterpaytable.add(0);
 		
@@ -2241,10 +2249,6 @@ public class ResultsModel {
 						
 						this.dtscatterpaytable.set(numofsymbol - 1, payout);
 					}
-					
-					// Populate the basehittable
-
-					this.basehittable.put(new SimpleEntry<String, Integer>(sequence, payout), 0);
 				}
 			}
 		}
@@ -2398,19 +2402,30 @@ public class ResultsModel {
 		this.symbols.clear();
 		this.blocks.clear();
 		this.paylines.clear();
+		
 		this.basepaytable.clear();
 		this.bonuspaytable.clear();
+		this.dtpaytable.clear();
+		this.dtscatterpaytable.clear();
+		this.basehittable.clear();
+		this.bonuspaytable.clear();
+		this.bonusspincounts.clear();
+		this.basescatterpaytable.clear();
+		this.bonuscatterpaytable.clear();
+		
 		this.reel1.clear();
 		this.reel2.clear();
 		this.reel3.clear();
 		this.reel4.clear();
 		this.reel5.clear();
+		
 		this.currspin = 0;
 		this.currconsumedspin = 0;
 		this.cancelled = false;
 		this.running = false;
 		this.paused = false;
 		this.error = false;
+		
 		this.currblock = null;
 		this.currblockindex = 0;
 		this.bonusactive = false;
@@ -3630,9 +3645,6 @@ public class ResultsModel {
 		}
 
 		private void calculatePayout() {
-			String winsequence = "";
-			Payline p = null;
-			
 			calculateScatterPayout();
 			calculateWBBonusPayout();
 			
@@ -3641,13 +3653,8 @@ public class ResultsModel {
 				if (!this.model.genGamblersRuin) {
 					for (int i = 0; i < this.model.currblock.numlines
 							&& i < this.model.paylines.size(); i++) {
-						p = this.model.paylines.get(i);
-						winsequence = "";
-						winsequence += symbolset[REEL_ONE][p.getR1()];
-						winsequence += symbolset[REEL_TWO][p.getR2()];
-						winsequence += symbolset[REEL_THREE][p.getR3()];
-						winsequence += symbolset[REEL_FOUR][p.getR4()];
-						winsequence += symbolset[REEL_FIVE][p.getR5()];
+						Payline p = this.model.paylines.get(i);
+						String winsequence = buildWinSequence(p);
 	
 						calculatePayoutBase(winsequence, i);
 					}
@@ -3655,13 +3662,8 @@ public class ResultsModel {
 				} else {
 					for (int i = 0; i < this.model.currgrblock.numlines
 							&& i < this.model.paylines.size(); i++) {
-						p = this.model.paylines.get(i);
-						winsequence = "";
-						winsequence += symbolset[REEL_ONE][p.getR1()];
-						winsequence += symbolset[REEL_TWO][p.getR2()];
-						winsequence += symbolset[REEL_THREE][p.getR3()];
-						winsequence += symbolset[REEL_FOUR][p.getR4()];
-						winsequence += symbolset[REEL_FIVE][p.getR5()];
+						Payline p = this.model.paylines.get(i);
+						String winsequence = buildWinSequence(p);
 	
 						calculatePayoutBase(winsequence, i);
 					}
@@ -3672,90 +3674,77 @@ public class ResultsModel {
 			
 		}
 
-		private void calculateDTPayout() {
-			String winsequence = "";
-			Payline p = null;
+		private void calculateDTPayout() {			
+			// Set current spin to bonus spin if in bonus mode
+			if (ResultsModel.this.bonusactive) {
+				r.bonusspin = true;
+			}
 			
 			calculateDTScatterPayout();
 			
 			// Loop through all the pay lines
 			for (int i = 0; i < this.model.currblock.numlines
 					&& i < this.model.paylines.size(); i++) {
-				p = this.model.paylines.get(i);
+				Payline p = this.model.paylines.get(i);
 				
-				winsequence += symbolset[REEL_ONE][p.getR1()];
-				winsequence += symbolset[REEL_TWO][p.getR2()];
-				winsequence += symbolset[REEL_THREE][p.getR3()];
-				winsequence += symbolset[REEL_FOUR][p.getR4()];
-				winsequence += symbolset[REEL_FIVE][p.getR5()];
+				String winsequence = buildWinSequence(p); 
 				
 				SimpleResult sr = new SimpleResult();
 				PaytableEntry pe;
 				
 				// Loop through all the win patterns
 				for (int j = 0; j < this.model.dtpaytable.size(); j++) {
-					pe = this.model.dtpaytable.get(i);
+					pe = this.model.dtpaytable.get(j);
 					
 					if (pe.getType() != WinType.SCATTER) {
 						calculateDTSimpleResult(pe, winsequence, sr);
-						updateResult(sr, j);
 					}
 				}
+				
+				updateDTResult(sr, i);
 			}
+		}
+		
+		private String buildWinSequence(Payline p) {
+			String winsequence = "";
+			
+			winsequence += symbolset[REEL_ONE][p.getR1()];
+			winsequence += symbolset[REEL_TWO][p.getR2()];
+			winsequence += symbolset[REEL_THREE][p.getR3()];
+			winsequence += symbolset[REEL_FOUR][p.getR4()];
+			winsequence += symbolset[REEL_FIVE][p.getR5()];
+			
+			return winsequence;
 		}
 		
 		private void calculateDTScatterPayout() {
 			String winsequence = "";
 			int num = findScatterSymbols(ResultsModel.this.scatter_symbol);
 			int scatterwin = 0;
-			
+
 			
 			if(num > 1) {
 				scatterwin = ResultsModel.this.dtscatterpaytable.get(num - 1);
 				winsequence = buildWinsequence(ResultsModel.this.scatter_symbol, num);
 				
-				ResultsModel.this.incrementBaseHit(winsequence, scatterwin);
 				
-				if (ResultsModel.this.bonusactive) {
+				if (r.bonusspin) {
 					scatterwin *= r.linebet * r.numlines * 3;
+					ResultsModel.this.incrementBonusHit(winsequence, scatterwin);
 				} else {
 					scatterwin *= r.linebet * r.numlines;
+					ResultsModel.this.incrementBaseHit(winsequence, scatterwin);
 				}
-				
-				r.bonusactivated = true;
-				r.freespinsawarded = 15;
+			
 				r.setScatter(scatterwin);
 				r.addCreditsWon(scatterwin);
-			}
-		}
-		
-		private void calculateDTSimpleResult(PaytableEntry pe,
-				String winsequence, SimpleResult simpleResult) {
-			boolean match = true;
-			String sequence = pe.getSequence();
-			
-			// check if the win sequence matches the paytable sequence
-			match = checkSequence(winsequence, sequence);
-
-			// if it's a match, determine the type of win and update SimpleResult accordingly.
-			if (match) {
-				if (pe.getType() == WinType.BASIC) {
-					if (pe.getPayout() >= simpleResult.bestBasicPayout) {
-						simpleResult.bestBasicPayout = pe.getPayout();
-						simpleResult.winsequence = sequence;
-					}
-					
-				} else if (pe.getType() == WinType.BONUS) { 
-					simpleResult.activatedBonus = true;
-					if (pe.getPayout() >= simpleResult.bestFreeStormPayout) {
-						simpleResult.bestFreeStormPayout = pe.getPayout();
-						simpleResult.winsequence = sequence;
-					}
-					
-				} else if (pe.getType() == WinType.WBBONUS) {
-					simpleResult.wbBonusWon = true;
+				
+				if (num > 2) {
+					r.bonusactivated = true;
+					r.freespinsawarded = 15;
 				}
 			}
+
 		}
 		
 		private void calculateScatterPayout() {
@@ -3930,7 +3919,7 @@ public class ResultsModel {
 			r.addLineCreditWinAmount(line, creditswon);
 			
 			// update the wins of the current spin.
-			r.setCreditsWon(r.getCreditsWon() + creditswon);
+			r.addCreditsWon(creditswon);
 		}
 		
 		// Used to determine the payout on Base and FSS Bonus wins in Base mode
@@ -3964,6 +3953,75 @@ public class ResultsModel {
 			
 			//if not a match, SimpleResult will have every win amount set to defaults as 0s for next played line.
 		}
+		
+		/**
+		 * Method used to determine the payout on each played line
+		 * @param pe	A PayTableEntry 
+		 * @param winsequence	The symbol sequence on the reels
+		 * @param simpleResult	A SimpleResult object for this played line
+		 */
+		private void calculateDTSimpleResult(PaytableEntry pe,
+				String winsequence, SimpleResult simpleResult) {
+			int wintype = 0;
+			String sequence = pe.getSequence();
+			
+			// Check if the win sequence matches the paytable sequence
+			wintype = checkDTSequence(winsequence, sequence);
+			
+			
+			// If it's a regular line win
+			if (wintype == 1) {
+				if (pe.getPayout() > simpleResult.bestBasicPayout) {
+					simpleResult.bestBasicPayout = pe.getPayout();
+					simpleResult.winsequence = sequence;
+				}
+			
+			// If it's a substitute win
+			} else if (wintype == 2) { 
+				if (pe.getPayout() * 2 > simpleResult.bestBasicPayout) {
+					simpleResult.bestBasicPayout = pe.getPayout() * 2;
+					simpleResult.winsequence = buildSubstitueSequence(winsequence, sequence);
+				}
+			}
+		}
+		
+		private String buildSubstitueSequence(String winsequence, String sequence) {
+			String builtSequence = "";
+			
+			for (int i = 0; i < sequence.length(); i ++) {
+				if (sequence.charAt(i) == '#')
+					builtSequence += "#";
+				else
+					builtSequence += winsequence.charAt(i);
+			}
+			
+			return builtSequence;
+		}
+		
+		// This method updates the result of one spin when each pay/played line is checked
+		private void updateDTResult(SimpleResult sr, int line) {
+			int creditswon = sr.bestBasicPayout * r.getLineBet();
+			
+			// if the simpleResult contains a win of any type, increment the lines won on this spin by 1
+			if (sr.bestBasicPayout > 0) {
+				r.incrementLinesWon();
+				
+				if (r.bonusspin) {
+					// add the win to a particular line.
+					r.addLineCreditWinAmount(line, creditswon * 3);
+					// update the wins of the current spin.
+					r.addCreditsWon(creditswon * 3);
+					// increment the hit counts if there's a win of basic/bonus type
+					this.model.incrementBonusHit(sr.winsequence, sr.bestBasicPayout * 3);
+				} else {
+					r.addLineCreditWinAmount(line, creditswon);
+					r.addCreditsWon(creditswon);
+					this.model.incrementBaseHit(sr.winsequence, sr.bestBasicPayout);
+				}
+				
+			}
+		}
+		
 
 		private boolean checkSequence(String winsequence, String sequence) {
 			boolean match = true;
@@ -3982,6 +4040,58 @@ public class ResultsModel {
 				}
 			}
 			return match;
+		}
+		
+		/**
+		 * Method use to determine if a symbol sequence is a win sequence in Dolphin Treasure.
+		 * 
+		 * @param winsequence	symbol sequence on the reels
+		 * @param sequence	win sequence from the paytable
+		 * @return wintype: 0 = loss; 1 = regular line win; 2 = substitute win
+		 */
+		private int checkDTSequence(String winsequence, String sequence) {
+			int wintype = 0;
+			boolean substitute = false;
+
+			for (int i = 0; i <= winsequence.length(); i++) {
+				if (substitute) {
+					wintype = 2;
+					break;
+				
+				// Stop if reaches end of the winsequence or encountered a '#' symbol in the sequence
+				} else if (i >= winsequence.length() || sequence.charAt(i) == '#') {
+					wintype =  1;
+					break;
+				
+				// In order to form a valid substitute pattern, the symbol to be substituted 
+				// must occur at least once in the winsequence.
+				} else if (winsequence.charAt(i) != sequence.charAt(i)) {
+					if (winsequence.charAt(i) == ResultsModel.this.substitute_symbol) 
+						substitute = isSubstituteWin(winsequence, sequence);
+				    else break;
+				}
+				
+			}
+			
+			return wintype;
+		}
+		
+		private boolean isSubstituteWin(String winsequence, String sequence) {
+			boolean issub = true;
+			boolean currsymboloccur = false;
+			char currsymbol = sequence.charAt(0);
+			
+			for (int i = 0; i < sequence.length(); i++) {
+				if (sequence.charAt(i) == '#')
+					break;
+				else if (winsequence.charAt(i) != ResultsModel.this.substitute_symbol
+						&& winsequence.charAt(i) != currsymbol)
+					issub = false;
+				else if (winsequence.charAt(i) == currsymbol)
+					currsymboloccur = true;
+			}
+			
+			return (issub && currsymboloccur);
 		}
 		
 		// Used to determine the amount of free spins awarded.
@@ -4011,17 +4121,11 @@ public class ResultsModel {
 		
 		// the result on one payline/played line of one single spin
 		class SimpleResult {
-
 			protected int bestBasicPayout = 0;
 			protected boolean activatedBonus = false;
 			protected int bestFreeStormPayout = 0;
 			protected boolean wbBonusWon = false;
 			protected String winsequence = "";
-			
-			public SimpleResult() {
-
-			}
-
 		}
 
 	}
@@ -4776,6 +4880,44 @@ public class ResultsModel {
 			
 			this.creditswonmedian = (creditswons.size() % 2 == 1) ? creditswons.get(mid_creditswon)
 						: (creditswons.get(mid_creditswon - 1) + creditswons.get(mid_creditswon)) / 2;	
+		}
+	}
+	
+	public class StreaksEntry {
+		private short numlines = 0;
+		private int numspins = 0;
+		private long blockid = 0;
+		
+		private int currstreak = 0;
+		private int numfreespins = 0;
+		private SortedMap<Integer, Integer> streaks = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
+			public int compare(Integer key1, Integer key2) {
+				return key1 - key2;
+			}
+		});
+		
+		public short getNumLines() {
+			return this.numlines;
+		}
+		
+		public int getNumSpins() {
+			return this.numspins;
+		}
+		
+		public long getBlockId() {
+			return this.blockid;
+		}
+		
+		public int getNumFreeSpins() {
+			return this.numfreespins;
+		}
+		
+		public SortedMap<Integer, Integer> getStreaks() {
+			return this.streaks;
+		}
+		
+		public void updateSE() {
+			//TODO
 		}
 	}
 	

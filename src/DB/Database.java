@@ -23,12 +23,13 @@ import uwsimresgen.model.ResultsModel.PaytableEntry;
 import uwsimresgen.model.ResultsModel.PrizeSizeEntry;
 import uwsimresgen.model.ResultsModel.Range;
 import uwsimresgen.model.ResultsModel.Result;
+import uwsimresgen.model.ResultsModel.StreaksEntry;
 import uwsimresgen.model.ResultsModel.Symbol;
 import uwsimresgen.model.ResultsModel.WinType;
 
 public class Database {
 
-	public static String DEFAULT_DB_NAME = "UWResGenDB";
+	public static String DEFAULT_DB_NAME = "MoneyStormDB";
 
 	// Change me to modify the database name.
 	private static String dbName = DEFAULT_DB_NAME;
@@ -59,6 +60,7 @@ public class Database {
 	};
 
 	private static int maxLines;
+	private static ResultsModel.Mode mode;
 	
 	static PreparedStatement st = null;
 	static PreparedStatement lps = null;
@@ -74,6 +76,10 @@ public class Database {
 	
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
+	}
+	
+	public static void setMode(ResultsModel.Mode value)	{
+		Database.mode = value;
 	}
 
 	public static void setDbName(String value) {
@@ -281,21 +287,27 @@ public class Database {
 		// If does not exist, create the table
 		if (!Database.doesTableExist(tableName)) {
 			String freeStormWin_CREDITS = "";
-			for (int i = 0; i < maxLines; i++) {
-				freeStormWin_CREDITS += ", FREESTORM" + i + "WIN_CREDITS smallint NOT NULL";
-			}
+			String wbBonus_CREDITS = "";
 			String lineWins_CREDITS = "";
+			
+			// Dolphin Treasure does not have WB and FSS wins
+			if (mode != ResultsModel.Mode.DOLPHIN_TREASURE) {
+				for (int i = 0; i < maxLines; i++) {
+					freeStormWin_CREDITS += ", FREESTORM" + i + "WIN_CREDITS smallint NOT NULL";
+				}
+			
+				for (int i=0; i < 3; i++) {
+					wbBonus_CREDITS += ", WBBONUS" + i
+							+ "WIN_CREDITS smallint NOT NULL";
+				}
+			}	
+			
 			for (int i = 0; i < maxLines; i++) {
 				lineWins_CREDITS += ", LINE" + i
 						+ "WIN_CREDITS smallint NOT NULL";
 			}
 			
-			String wbBonus_CREDITS = "";
-			for (int i=0; i < 3; i++) {
-				wbBonus_CREDITS += ", WBBONUS" + i
-						+ "WIN_CREDITS smallint NOT NULL";
-			}
-
+			
 			String query = "create table " + tableName + " "
 					+ "(RECORDNUMBER bigint NOT NULL, "
 					+ "BLOCKNUMBER bigint NOT NULL, "
@@ -324,14 +336,27 @@ public class Database {
 
 		String freeStormWins_Credits = "";
 		String freeStormWins_CreditsQ = "";
-		if (result.getFreeStormWinAmounts() != null
-				&& result.getFreeStormWinAmounts().size() > 0) {
-			for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
-				freeStormWins_Credits += ", FREESTORM" + i + "WIN_CREDITS";
-				freeStormWins_CreditsQ += ",?";
+		String wbbWins_Credits = "";
+		String wbbWins_CreditsQ = "";
+		
+		if (mode != ResultsModel.Mode.DOLPHIN_TREASURE) {
+			if (result.getFreeStormWinAmounts() != null
+					&& result.getFreeStormWinAmounts().size() > 0) {
+				for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
+					freeStormWins_Credits += ", FREESTORM" + i + "WIN_CREDITS";
+					freeStormWins_CreditsQ += ",?";
+				}
+			}
+			
+			if (result.getWBBonusCreditWin() != null
+					&& result.getWBBonusCreditWin().size() > 0) {
+				for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
+					wbbWins_Credits += ", WBBONUS" + i + "WIN_CREDITS";
+					wbbWins_CreditsQ += ",?";
+				}
 			}
 		}
-
+		
 		String lineWins_Credits = "";
 		String lineWins_CreditsQ = "";
 		if (result.getLineCreditWinAmounts() != null
@@ -342,20 +367,11 @@ public class Database {
 			}
 		}
 		
-		String wbbWins_Credits = "";
-		String wbbWins_CreditsQ = "";
-		if (result.getWBBonusCreditWin() != null
-				&& result.getWBBonusCreditWin().size() > 0) {
-			for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
-				wbbWins_Credits += ", WBBONUS" + i + "WIN_CREDITS";
-				wbbWins_CreditsQ += ",?";
-			}
-		}
-		
 		// Otherwise, add it to DB.
 		String query = "insert into "
 				+ tableName
-				+ "(RECORDNUMBER, BLOCKNUMBER, REPEATNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, LINEBET, DENOMINATION, CREDITSWON, LDW_WINS, LDW_LOSSES, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
+				+ "(RECORDNUMBER, BLOCKNUMBER, REPEATNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, NUMOfLINES, " 
+				+ "LINEBET, DENOMINATION, CREDITSWON, LDW_WINS, LDW_LOSSES, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
 				+ wbbWins_Credits  + freeStormWins_Credits + lineWins_Credits + ") "  
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
 				+ wbbWins_CreditsQ + freeStormWins_CreditsQ + lineWins_CreditsQ + ")";
@@ -383,29 +399,30 @@ public class Database {
 			st.setShort(19, result.getFreeSpinsAwarded());
 
 			int startingIndex = 20;
-
-			if (result.getWBBonusCreditWin() != null
-					&& result.getWBBonusCreditWin().size() > 0) {
-				for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
-					st.setDouble(startingIndex, result.getWBBonusCreditWinOn(i));
-					startingIndex++;
+			
+			if (mode != ResultsModel.Mode.DOLPHIN_TREASURE) {
+				if (result.getWBBonusCreditWin() != null
+						&& result.getWBBonusCreditWin().size() > 0) {
+					for (int i = 0; i < result.getWBBonusCreditWin().size(); i++) {
+						st.setDouble(startingIndex, result.getWBBonusCreditWinOn(i));
+						startingIndex++;
+					}
+				}
+				
+				if (result.getFreeStormWinAmounts() != null
+						&& result.getFreeStormWinAmounts().size() > 0) {
+					for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
+						st.setDouble(startingIndex,
+								result.getFreeStormWinAmount(i));
+						startingIndex++;
+					}
 				}
 			}
 			
-			if (result.getFreeStormWinAmounts() != null
-					&& result.getFreeStormWinAmounts().size() > 0) {
-				for (int i = 0; i < result.getFreeStormWinAmounts().size(); i++) {
-					st.setDouble(startingIndex,
-							result.getFreeStormWinAmount(i));
-					startingIndex++;
-				}
-			}
-
 			if (result.getLineCreditWinAmounts() != null
 					&& result.getLineCreditWinAmounts().size() > 0) {
 				for (int i = 0; i < result.getLineCreditWinAmounts().size(); i++) {
-					st.setDouble(startingIndex,
-							result.getLineCreditWinAmount(i));
+					st.setDouble(startingIndex, result.getLineCreditWinAmount(i));
 					startingIndex++;
 				}
 			}
@@ -854,6 +871,102 @@ public class Database {
 			} catch (SQLException e) {
 				throw e;
 			}
+		}
+	}
+	
+	public static void insertIntoTable(String tableName,
+			StreaksEntry se) throws SQLException {
+		
+	}
+	
+	/** Dolphin Treasure only database tables **/
+	public static void insertIntoDTTable(String tableName,
+			PaytableEntry paytableEntry) throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		// If does not exist, create the table
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName + " "
+					+ "(ENTRYID bigint NOT NULL, "
+					+ "WINCODE varchar(10) NOT NULL, "
+					+ "SEQUENCE varchar(10) NOT NULL, "
+					+ "PAYOUT integer NOT NULL, "
+					+ "TYPE varchar(10) NOT NULL) ";
+			Database.createTable(tableName, query);
+		}
+
+		// Otherwise, add it to DB.
+		String query = "insert into " + tableName
+				+ "(ENTRYID,WINCODE,SEQUENCE,PAYOUT,TYPE) "
+				+ "values(?,?,?,?,?)";
+		try {
+			if (st == null)
+				st = conn.prepareStatement(query);
+			
+			st.setLong(1, paytableEntry.getEntryID());
+			st.setString(2, paytableEntry.getWinCode());
+			st.setString(3, paytableEntry.getSequence());
+			st.setInt(4, paytableEntry.getPayout());
+			st.setString(5, paytableEntry.getType().toString());
+			
+			st.addBatch();
+			batchRequests++;
+			
+
+			if (batchRequests >= 1000) {
+				batchRequests = 0;
+				st.executeBatch();
+			}
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	
+	
+	public static void insertIntoTable(String tableName,
+			HashMap<SimpleEntry<String, Integer>, Integer> hittable) throws SQLException {
+		tableName = tableName.toUpperCase();
+	
+		// If does not exist, create the table
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName + " "
+					+ "(ENTRYID bigint NOT NULL, "
+					+ "SEQUENCE varchar(10) NOT NULL, "
+					+ "PAYOUT integer NOT NULL, "
+					+ "HITS bigint NOT NULL)";
+			Database.createTable(tableName, query);
+		}
+
+		// Otherwise, add it to DB.
+		String query = "insert into " + tableName
+				+ "(ENTRYID,SEQUENCE,PAYOUT,HITS) "
+				+ "values(?,?,?,?)";
+		try {
+			if (st == null)
+				st = conn.prepareStatement(query);
+			
+			Iterator<Map.Entry<SimpleEntry<String, Integer>, Integer>> entries = hittable.entrySet().iterator();
+			long id = 0;
+			
+			while (entries.hasNext()) { 
+				Map.Entry<SimpleEntry<String, Integer>, Integer> entry = entries.next();
+				
+				st.setLong(1, id);
+				st.setString(2, entry.getKey().getKey());
+				st.setInt(3, entry.getKey().getValue());
+				st.setLong(4, entry.getValue());
+				
+				id++;
+				st.addBatch();
+				batchRequests++;
+	
+				if (batchRequests >= 1000) {
+					batchRequests = 0;
+					st.executeBatch();
+				}
+			}
+		} catch (SQLException e) {
+			throw e;
 		}
 	}
 

@@ -335,6 +335,7 @@ public class HomeView extends JPanel implements IView  {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.MONEY_STORM);
+				HomeView.this.model.setDBName("MoneyStormDB");
 			}
 		});
 		
@@ -343,6 +344,7 @@ public class HomeView extends JPanel implements IView  {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.DOLPHIN_TREASURE);
+				HomeView.this.model.setDBName("DolphinTreasureDB");
 			}
 		});
 		
@@ -572,10 +574,15 @@ public class HomeView extends JPanel implements IView  {
 				this.genPrizeSizeCheckBox.setEnabled(true);
 				this.genForcedFreeSpinsCheckBox.setEnabled(true);
 			} else {
+				this.genAllStopsCheckBox.setEnabled(true);
+				this.genNoTableCheckBox.setEnabled(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genPrizeSizeCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				
+				this.prefixTF.setText(this.model.getDTTablePrefix());	
+				this.dbnameTF.setText(this.model.getDBName());
 			}
 			
 			this.numlinesLabel.setVisible(false);

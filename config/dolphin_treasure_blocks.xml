@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+	<blocks>
+		<!-- block info
+			numlines - integer (0, 20]
+			linebet - integer > 0 unit is CREDITS 
+			denomination - integer > 0 ( note: you are specifying the number of cents as an integer value, ie: 1 represents 1 cent )
+			numspins - integer > 0
+			blockrepeats - integer > 0
+		-->	
+  
+		<block numlines="1" linebet="1" denomination="100" numspins="1000000" blockrepeats="1" />  
+		<block numlines="9" linebet="1" denomination="10" numspins="1000000" blockrepeats="1" /> 
+		
+	</blocks>
+</data>

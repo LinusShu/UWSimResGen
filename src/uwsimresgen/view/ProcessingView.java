@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 import uwsimresgen.model.ResultsModel;
+import uwsimresgen.model.ResultsModel.Mode;
 
 public class ProcessingView extends JPanel implements IView {
 
@@ -133,10 +134,6 @@ public class ProcessingView extends JPanel implements IView {
 		this.gbc.gridwidth = 4;
 		this.gbc.anchor = GridBagConstraints.CENTER;
 		this.add(jp3, gbc);
-			
-		
-		
-		
 		this.gbc.insets = new Insets(10,10,10,10);
 		
 		JPanel jp2 = new JPanel();
@@ -243,13 +240,20 @@ public class ProcessingView extends JPanel implements IView {
 			//this.dbTableNameValueLabel.setText(this.model.getDBTableName());
 			//this.dbPaytableTableNameValueLabel.setText(this.model.getDBTableName()); // TODO: FIX NAME
 			//this.dbReelStopsTableNameValueLabel.setText(this.model.getDBTableName()); // TODO: FIX NAME
+			if (this.model.getMode() == Mode.DOLPHIN_TREASURE) {
+				this.dbTableNameFormatValueLabel.setText(
+						this.model.getDTTablePrefix()
+						+ "_<Table Name>_"
+						+ this.model.getTableSuffix()
+					);
+			} else {
 			
 			this.dbTableNameFormatValueLabel.setText(
 					this.model.getTablePrefix()
 					+ "_<Table Name>_"
 					+ this.model.getTableSuffix()
 				);
-			
+			}
 			
 			this.outputLogValueLabel.setText(this.model.getOutputLogFilePath());
 			this.cancelButton.setEnabled(false);
