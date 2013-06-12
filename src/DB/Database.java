@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import uwsimresgen.model.ResultsModel;
+import uwsimresgen.model.ResultsModel.BasicInfoEntry;
 import uwsimresgen.model.ResultsModel.Block;
 import uwsimresgen.model.ResultsModel.ForcedFreeSpinEntry;
 import uwsimresgen.model.ResultsModel.GamblersRuinEntry;
@@ -874,9 +876,240 @@ public class Database {
 		}
 	}
 	
-	public static void insertIntoTable(String tableName,
+	public static void insertIntoTable(String tablePrefix,
 			StreaksEntry se) throws SQLException {
+		tablePrefix = tablePrefix.toUpperCase();
+		flushBatch();
 		
+		// If tables do not exist, create the tables
+		String WWName = "DOLPHIN_TREASURE_WINNING_STREAKS"
+				+"_LDW_AS_WINS_"
+				+ tablePrefix.substring(24);
+		
+		if (!Database.doesTableExist(WWName)) {
+			String query = "create table " + WWName + " "
+					+ "(BLOCKID bigint NOT NULL, "
+					+ "NUMLINES integer NOT NULL, "
+					+ "NUMSPINS integer NOT NULL, "
+					+ "NUMFREESPINS integer NOT NULL, "
+					+ "STREAKLENGTH integer NOT NULL, " 
+					+ "NUMSTREAKS integer NOT NULL) ";
+			Database.createTable(WWName, query);
+		}
+		
+		String WLName = "DOLPHIN_TREASURE_WINNING_STREAKS"
+				+"_LDW_AS_LOSSES_"
+				+ tablePrefix.substring(24);
+		
+		if (!Database.doesTableExist(WLName)) {
+			String query = "create table " + WLName + " "
+					+ "(BLOCKID bigint NOT NULL, "
+					+ "NUMLINES integer NOT NULL, "
+					+ "NUMSPINS integer NOT NULL, "
+					+ "NUMFREESPINS integer NOT NULL, "
+					+ "STREAKLENGTH integer NOT NULL, " 
+					+ "NUMSTREAKS integer NOT NULL) ";
+			Database.createTable(WLName, query);
+		}
+		
+		String LWName = "DOLPHIN_TREASURE_LOSING_STREAKS"
+				+"_LDW_AS_WINS_"
+				+ tablePrefix.substring(24);
+		
+		if (!Database.doesTableExist(LWName)) {
+			String query = "create table " + LWName + " "
+					+ "(BLOCKID bigint NOT NULL, "
+					+ "NUMLINES integer NOT NULL, "
+					+ "NUMSPINS integer NOT NULL, "
+					+ "NUMFREESPINS integer NOT NULL, "
+					+ "STREAKLENGTH integer NOT NULL, " 
+					+ "NUMSTREAKS integer NOT NULL) ";
+			Database.createTable(LWName, query);
+		}
+		
+		String LLName = "DOLPHIN_TREASURE_LOSING_STREAKS"
+				+"_LDW_AS_LOSSES_"
+				+ tablePrefix.substring(24);
+		
+		if (!Database.doesTableExist(LLName)) {
+			String query = "create table " + LLName + " "
+					+ "(BLOCKID bigint NOT NULL, "
+					+ "NUMLINES integer NOT NULL, "
+					+ "NUMSPINS integer NOT NULL, "
+					+ "NUMFREESPINS integer NOT NULL, "
+					+ "STREAKLENGTH integer NOT NULL, " 
+					+ "NUMSTREAKS integer NOT NULL) ";
+			Database.createTable(LLName, query);
+		}
+		
+		// Otherwise, insert winning streaks (LDW as wins) table
+		String insert = "insert into " + WWName
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH, NUMSTREAKS) "
+				+ "values(?,?,?,?,?,?)";
+		
+		try {
+			if (st == null)
+				st = conn.prepareStatement(insert);
+			
+			Iterator<Entry<Integer, Integer>> streaks = se.getWinningStreaks_LDWasWins().entrySet().iterator();
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+	
+				st.setLong(1, se.getBlockId());
+				st.setInt(2, se.getNumLines());
+				st.setInt(3, se.getNumSpins());
+				st.setInt(4, se.getNumFreeSpins());
+				st.setInt(5, (int)(streak.getKey()));
+				st.setInt(6, (int)(streak.getValue()));
+				
+				st.addBatch();
+				batchRequests ++;
+			}
+		} catch (SQLException e) {
+			throw e;
+		} finally {
+			flushBatch();
+		}
+		
+		// Insert winning streaks (LDW as losses) table
+		insert = "insert into " + WLName
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH, NUMSTREAKS) "
+				+ "values(?,?,?,?,?,?)";
+		
+		try {
+			if (st == null)
+				st = conn.prepareStatement(insert);
+			
+			Iterator<Entry<Integer, Integer>> streaks = se.getWinningStreaks_LDWasLosses().entrySet().iterator();
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+	
+				st.setLong(1, se.getBlockId());
+				st.setInt(2, se.getNumLines());
+				st.setInt(3, se.getNumSpins());
+				st.setInt(4, se.getNumFreeSpins());
+				st.setInt(5, (int)(streak.getKey()));
+				st.setInt(6, (int)(streak.getValue()));
+				
+				st.addBatch();
+				batchRequests ++;
+			}
+		} catch (SQLException e) {
+			throw e;
+		} finally {
+			flushBatch();
+		}
+		
+		// Insert losing streaks (LDW as wins) table
+		insert = "insert into " + LWName
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH, NUMSTREAKS) "
+				+ "values(?,?,?,?,?,?)";
+		
+		try {
+			if (st == null)
+				st = conn.prepareStatement(insert);
+			
+			Iterator<Entry<Integer, Integer>> streaks = se.getLosingStreaks_LDWasWins().entrySet().iterator();
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+	
+				st.setLong(1, se.getBlockId());
+				st.setInt(2, se.getNumLines());
+				st.setInt(3, se.getNumSpins());
+				st.setInt(4, se.getNumFreeSpins());
+				st.setInt(5, (int)(streak.getKey()));
+				st.setInt(6, (int)(streak.getValue()));
+				
+				st.addBatch();
+				batchRequests ++;
+			}
+		} catch (SQLException e) {
+			throw e;
+		} finally {
+			flushBatch();
+		}
+		
+		// Insert losing streaks (LDW as losses) table
+		insert = "insert into " + LLName
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH, NUMSTREAKS) "
+				+ "values(?,?,?,?,?,?)";
+		
+		try {
+			if (st == null)
+				st = conn.prepareStatement(insert);
+			
+			Iterator<Entry<Integer, Integer>> streaks = se.getLosingStreaks_LDWasLosses().entrySet().iterator();
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+	
+				st.setLong(1, se.getBlockId());
+				st.setInt(2, se.getNumLines());
+				st.setInt(3, se.getNumSpins());
+				st.setInt(4, se.getNumFreeSpins());
+				st.setInt(5, (int)(streak.getKey()));
+				st.setInt(6, (int)(streak.getValue()));
+				
+				st.addBatch();
+				batchRequests ++;
+			}
+		} catch (SQLException e) {
+			throw e;
+		} finally {
+			flushBatch();
+		}
+	}
+	
+	public static void insertIntoTable(String tableName,
+			BasicInfoEntry bie) throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		// If does not exist, create the table
+				if (!Database.doesTableExist(tableName)) {
+					String query = "create table " + tableName + " "
+							+ "(BLOCKID bigint NOT NULL, "
+							+ "NUMLINES integer NOT NULL, "
+							+ "NUMSPINS integer NOT NULL, "
+							+ "NUMFREESPINS integer NOT NULL, "
+							+ "BONUSINITIALIZATIONS integer NOT NULL, "
+							+ "BONUSRETRIGGERING integer NOT NULL, "
+							+ "WINS integer NOT NULL, "
+							+ "LOSSES integer NOT NULL, "
+							+ "LDWS integer NOT NULL, "
+							+ "BONUSWINS integer NOT NULL) ";
+					Database.createTable(tableName, query);
+				}
+
+				// Otherwise, add it to DB.
+				String query = "insert into " + tableName
+						+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, BONUSINITIALIZATIONS, " 
+						+ "BONUSRETRIGGERING, WINS, LOSSES, LDWS, BONUSWINS) "
+						+ "values(?,?,?,?,?,?,?,?,?,?)";
+				try {
+					if (st == null)
+						st = conn.prepareStatement(query);
+					
+					st.setLong(1, bie.getBlockID());
+					st.setInt(2, bie.getNumLines());
+					st.setInt(3, bie.getNumSpins());
+					st.setInt(4, bie.getNumFreeSpins());
+					st.setInt(5, bie.getNumBI());
+					st.setInt(6, bie.getNumBR());
+					st.setInt(7, bie.getBaseWins());
+					st.setInt(8, bie.getBaseLosses());
+					st.setInt(9, bie.getBaseLDWs());
+					st.setInt(10, bie.getBonusWins());
+					
+					st.addBatch();
+					batchRequests++;
+					
+
+					if (batchRequests >= 1000) {
+						batchRequests = 0;
+						st.executeBatch();
+					}
+				} catch (SQLException e) {
+					throw e;
+				}
 	}
 	
 	/** Dolphin Treasure only database tables **/

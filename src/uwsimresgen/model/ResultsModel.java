@@ -45,6 +45,7 @@ public class ResultsModel {
 	public static String GAMBLERS_RUIN_TABLE_NAME = "GamblersRuin";
 	public static String PRIZE_SIZES_TABLE_NAME = "PrizeSizes";
 	public static String FORCED_FREE_SPINS_TABLE_NAME = "ForcedFreeSpins";
+	public static String BASIC_INFO_TABLE_NAME = "BasicInfo";
 	public static String STREAKS_TABLE_PREFIX = "Streaks";
 
 	public static String DT_TABLE_PREFIX = "DolphinTreasure";
@@ -154,6 +155,7 @@ public class ResultsModel {
 	private GamblersRuinEntry currgre = null;
 	private PrizeSizeEntry currpze = null;
 	private ForcedFreeSpinEntry currffs = null;
+	private BasicInfoEntry currbie = null;
 	private StreaksEntry currse = null;
 	
 	private boolean bonusactive = false;
@@ -513,6 +515,10 @@ public class ResultsModel {
 	
 	public String getDTBonusHitTableName() {
 		return this.buildDBTableName(ResultsModel.DP_BONUS_HIT_TABLE_NAME);
+	}
+	
+	public String getBasicInfoTableName() {
+		return this.buildDBTableName(ResultsModel.BASIC_INFO_TABLE_NAME);
 	}
 	
 	public String getStreaksTableName() {
@@ -1090,8 +1096,11 @@ public class ResultsModel {
 
 			try {
 				//Producer Main Flow here
+				//TODO Dolphin Treasure main flow here
 				ResultsModel.this.currblock = ResultsModel.this.blocks
 						.get(ResultsModel.this.currblockindex);
+				ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
+				ResultsModel.this.currbie = new BasicInfoEntry(ResultsModel.this.currblock);
 				
 				while (ResultsModel.this.currblock != null
 						&& !ResultsModel.this.cancelled) {
@@ -1114,6 +1123,7 @@ public class ResultsModel {
 									.get(ResultsModel.this.currblockindex)
 									.getBlockNumber());
 							r.setRepeatNumber(ResultsModel.this.currblockrepeat);
+							
 							
 							// If there are free spins awarded
 							if (r.freespinsawarded > 0) { 
@@ -1149,12 +1159,19 @@ public class ResultsModel {
 									Database.insertIntoTable(ResultsModel.this
 											.getSpinResultsDBTableName(), pre_result);
 							}
-
-							ResultsModel.this.incrementCurrSpin();
+							
+							// Do not increment spin if in bonus mode (except in All-Reel-Stop mode)
+							if (orign_mode || (!orign_mode && !r.bonusspin))
+								ResultsModel.this.incrementDTCurrSpin();
+							//TODO add Dolphin Treasure entries here
+							ResultsModel.this.currbie.updateBIE(r);
+							// Only generate streak results if not in All-Reel-Stop mode
+							if (!orign_mode) 
+								ResultsModel.this.currse.updateSE(r);
 							
 							pre_result = r;
 							
-							// If one block or one blockrepeat is done
+							// If one block or one block repeat is done
 							if (ResultsModel.this.ldwResetRequired) {
 								pre_result.setLDWWins(ResultsModel.this.wins);
 								pre_result.setLDWLosses(ResultsModel.this.losses);
@@ -1586,6 +1603,40 @@ public class ResultsModel {
 				
 			}
 		}
+		this.UpdateViews();
+	}
+	
+	protected void incrementDTCurrSpin() {
+		this.currspin++;
+		// TODO Add Dolphin Treasure new entries here
+		// If the currblock runs out of spins 
+		if (this.currblock.incrementCurrSpin()) {
+			// If currblock needs to be repeated
+			if (this.currblockrepeat < this.currblock.repeats) {
+				this.currblockrepeat++;
+				
+				this.ldwResetRequired = true;
+				this.repeatComplete = true; 
+				
+				// Reset spins in the block to start a new repeat if not in ForceFreeSpins mode
+				this.currblock.resetNumOfSpins();
+				this.currblock.currspin = 0;
+				
+			} else { // If the currblock is done
+				this.currblockindex++;
+				this.blockComplete = true;
+				this.currblockrepeat = 1;
+				
+				// If there are more blocks
+				if (this.currblockindex < this.blocks.size()) {
+					this.currblock = this.blocks.get(currblockindex);
+					this.ldwResetRequired = true;
+				} else {
+					this.currblock = null;
+				}
+			}
+		}
+
 		this.UpdateViews();
 	}
 	
@@ -4130,6 +4181,129 @@ public class ResultsModel {
 
 	}
 
+	
+	public class BasicInfoEntry {
+		private long blockid = 0;
+		private int numlines = 0;
+		private int numspins = 0;
+		private int numfreespins = 0;
+		private int numbonusinitialization = 0;
+		private int numbonusretriggering = 0;
+		
+		private int basewins = 0;
+		private int baselosses = 0;
+		private int baseldws = 0;
+		private int bonuswins = 0;
+		
+		private long basepayout = 0;
+		private long bonuspayout = 0;
+		
+		public BasicInfoEntry(Block currblock) {
+			if (currblock != null) {
+				this.blockid = currblock.getBlockNumber();
+				this.numlines = currblock.getNumLines();
+			}
+		}
+		
+		public long getBlockID() {
+			return this.blockid;
+		}
+		
+		public int getNumLines() {
+			return this.numlines;
+		}
+		
+		public int getNumSpins() {
+			return this.numspins;
+		}
+		
+		public int getNumFreeSpins() {
+			return this.numfreespins;
+		}
+		
+		public int getNumBI() {
+			return this.numbonusinitialization;
+		}
+		
+		public int getNumBR() {
+			return this.numbonusretriggering;
+		}
+		
+		public int getBaseWins() {
+			return this.basewins;
+		}
+		
+		public int getBaseLosses() {
+			return this.baselosses;
+		}
+		
+		public int getBaseLDWs() {
+			return this.baseldws;
+		}
+		
+		public int getBonusWins() {
+			return this.bonuswins;
+		}
+		
+		public long getBasePayout() {
+			return this.basepayout;
+		}
+		
+		public long getBonusPayout() {
+			return this.bonuspayout;
+		}
+		
+		public void updateBIE(Result r) {
+			this.numspins ++;
+			
+			// If it is a bonus spin
+			if (r.bonusspin) {
+				this.numfreespins ++;
+				// If the bonus spin is a hit
+				if (r.creditswon > 0) {
+					this.bonuswins ++;
+					this.bonuspayout += r.creditswon;
+				}
+			// If a base spin is a hit
+			} else if (r.creditswon > 0) {
+				this.basepayout += r.creditswon;
+				// If not a ldw
+				if ((r.creditswon - this.numlines * r.linebet) >= 0)
+					this.basewins ++;
+				// If the hit is a ldw
+				else this.baseldws ++;
+			// If a base spin is a loss
+			} else {
+				this.baselosses ++;
+			}
+			
+			// If bonus mode is activated
+			if (r.bonusactivated) {
+				// If bonus mode is re-triggered in the bonus mode
+				if (r.bonusspin) {
+					this.numbonusretriggering ++;
+				} else {
+					this.numbonusinitialization ++;
+				}
+			}
+			
+			// If reach the end of the block
+			if (ResultsModel.this.blockComplete) {
+				try {
+					Database.flushBatch();
+					Database.insertIntoTable(ResultsModel.this.getBasicInfoTableName(), 
+							ResultsModel.this.currbie);
+				} catch (SQLException e) {
+					ResultsModel.this.outputLog.outputStringAndNewLine("Inserting into BasicInfo DB table encountered problem: "
+							+ e.getMessage());
+					e.printStackTrace();
+				} finally {
+					ResultsModel.this.currbie = new BasicInfoEntry(ResultsModel.this.currblock);
+				}
+			}
+		}
+	}
+	
 	public class PrizeSizeEntry {
 		private Block currblock = null;
 		private int wins = 0;
@@ -4888,13 +5062,41 @@ public class ResultsModel {
 		private int numspins = 0;
 		private long blockid = 0;
 		
-		private int currstreak = 0;
+		private int currstreak_ldwaswins = 0;
+		private int currstreak_ldwaslosses = 0;
 		private int numfreespins = 0;
-		private SortedMap<Integer, Integer> streaks = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
+		private int bonuswins = 0;
+		
+		private SortedMap<Integer, Integer> winningstreaks_ldwaswins = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
 			public int compare(Integer key1, Integer key2) {
 				return key1 - key2;
 			}
 		});
+		
+		private SortedMap<Integer, Integer> winningstreaks_ldwaslosses = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
+			public int compare(Integer key1, Integer key2) {
+				return key1 - key2;
+			}
+		});
+		
+		private SortedMap<Integer, Integer> losingstreaks_ldwaswins = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
+			public int compare(Integer key1, Integer key2) {
+				return key1 - key2;
+			}
+		});
+		
+		private SortedMap<Integer, Integer> losingstreaks_ldwaslosses = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
+			public int compare(Integer key1, Integer key2) {
+				return key1 - key2;
+			}
+		});
+		
+		public StreaksEntry(Block currblock) {
+			if (currblock != null) {
+				this.numlines = currblock.getNumLines();
+				this.blockid = currblock.getBlockNumber();
+			}
+		}
 		
 		public short getNumLines() {
 			return this.numlines;
@@ -4912,12 +5114,148 @@ public class ResultsModel {
 			return this.numfreespins;
 		}
 		
-		public SortedMap<Integer, Integer> getStreaks() {
-			return this.streaks;
+		public SortedMap<Integer, Integer> getWinningStreaks_LDWasWins() {
+			return this.winningstreaks_ldwaswins;
 		}
 		
-		public void updateSE() {
-			//TODO
+		private void incrementWinningStreaks_LDWasWins(int streak) {
+			if (this.winningstreaks_ldwaswins.containsKey(streak))
+				this.winningstreaks_ldwaswins.put(streak,
+						this.winningstreaks_ldwaswins.get(streak) + 1);
+			else this.winningstreaks_ldwaswins.put(streak, 1);
+		}
+		
+		public SortedMap<Integer, Integer> getWinningStreaks_LDWasLosses() {
+			return this.winningstreaks_ldwaslosses;
+		}
+		
+		private void incrementWinningStreaks_LDWasLosses(int streak) {
+			if (this.winningstreaks_ldwaslosses.containsKey(streak))
+				this.winningstreaks_ldwaslosses.put(streak,
+						this.winningstreaks_ldwaslosses.get(streak) + 1);
+			else this.winningstreaks_ldwaslosses.put(streak, 1);
+		}
+		
+		public SortedMap<Integer, Integer> getLosingStreaks_LDWasWins() {
+			return this.losingstreaks_ldwaswins;
+		}
+		
+		private void incrementLosingStreaks_LDWasWins(int streak) {
+			if (this.losingstreaks_ldwaswins.containsKey(streak))
+				this.losingstreaks_ldwaswins.put(streak,
+						this.losingstreaks_ldwaswins.get(streak) + 1);
+			else this.losingstreaks_ldwaswins.put(streak, 1);
+		}
+		
+		public SortedMap<Integer, Integer> getLosingStreaks_LDWasLosses() {
+			return this.losingstreaks_ldwaslosses;
+		}
+		
+		private void incrementLosingStreaks_LDWasLosses(int streak) {
+			if (this.losingstreaks_ldwaslosses.containsKey(streak))
+				this.losingstreaks_ldwaslosses.put(streak,
+						this.losingstreaks_ldwaslosses.get(streak) + 1);
+			else this.losingstreaks_ldwaslosses.put(streak, 1);
+		}
+		
+		public void updateSE(Result r) {
+			boolean isLDWasWin = r.creditswon > 0;
+			boolean isLDWasLoss = (r.creditswon - r.linebet * r.numlines) >= 0;
+			
+			this.numspins++;
+			// TODO debug here
+			// If run out of free spins, update the streaks
+			if (bonuswins > 0 && !r.bonusspin) {
+				updateStreaks(bonuswins > 0, (bonuswins - r.numlines * r.linebet) >= 0);
+				bonuswins = 0;
+				
+				// If a spin triggers another bonus mode right after the end of bonus mode
+				if (r.bonusactivated) {
+					bonuswins += r.creditswon;
+				} else { 
+					updateStreaks(isLDWasWin, isLDWasLoss);
+				}
+			// If the spin triggers bonus mode
+			} else if (r.bonusactivated && !r.bonusspin) {
+				bonuswins += r.creditswon;
+			// If the spin is a free spin
+			} else if (r.bonusspin) {
+				bonuswins += r.creditswon;
+				this.numfreespins ++;
+			} else {
+				updateStreaks(isLDWasWin, isLDWasLoss);
+			}
+
+			// If a block is finished 
+			if (ResultsModel.this.blockComplete) {
+				// Insert that last streak
+				if (this.currstreak_ldwaswins > 0)
+					this.incrementWinningStreaks_LDWasWins(currstreak_ldwaswins);
+				else this.incrementLosingStreaks_LDWasWins(currstreak_ldwaswins * -1);
+				
+				if (this.currstreak_ldwaslosses > 0)
+					this.incrementWinningStreaks_LDWasLosses(currstreak_ldwaslosses);
+				else this.incrementLosingStreaks_LDWasLosses(currstreak_ldwaslosses * -1);
+				
+				// Insert into DB
+				try {
+					Database.insertIntoTable(ResultsModel.this.getStreaksTableName(), this);
+				} catch (SQLException e) {
+					ResultsModel.this.outputLog.outputStringAndNewLine("Inserting into Streaks Table encountered problem: "
+							+ e.getMessage());
+				} finally {
+					blockComplete = false;
+					ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
+				}
+			}
+		}
+		
+		private void updateStreaks(boolean isLDWasWin, boolean isLDWasLoss) {
+			// If current ldwaswins streak is a winning streak
+			if (this.currstreak_ldwaswins >= 0) {
+				// If it is another win
+				if (isLDWasWin) {
+					this.currstreak_ldwaswins++;
+				// If a loss, then break the winning streak
+				} else {
+					if (this.currstreak_ldwaswins != 0)
+						this.incrementWinningStreaks_LDWasWins(this.currstreak_ldwaswins);
+					this.currstreak_ldwaswins = -1;
+				}
+			// If current ldwaswins streak is a losing streak
+			} else {
+				// If a win, then break the losing streak
+				if (isLDWasWin) {
+					this.incrementLosingStreaks_LDWasWins(this.currstreak_ldwaswins * -1);
+					this.currstreak_ldwaswins = 1;
+				// If it is another loss
+				} else {
+					this.currstreak_ldwaswins--;
+				}
+			}
+			
+			// If current ldwaslossess streak is a winning streak
+			if (this.currstreak_ldwaslosses >= 0) {
+				// If it is another win
+				if (isLDWasLoss) {
+					this.currstreak_ldwaslosses++;
+				// If a loss, then break the winning streak
+				} else {
+					if (this.currstreak_ldwaslosses != 0)
+						this.incrementWinningStreaks_LDWasLosses(this.currstreak_ldwaslosses);
+					this.currstreak_ldwaslosses = -1;
+				}
+			// If current ldwaswins streak is a losing streak
+			} else {
+				// If a win, then break the losing streak
+				if (isLDWasLoss) {
+					this.incrementLosingStreaks_LDWasLosses(this.currstreak_ldwaslosses * -1);
+					this.currstreak_ldwaslosses = 1;
+				// If it is another loss
+				} else {
+					this.currstreak_ldwaslosses--;
+				}
+			}
 		}
 	}
 	

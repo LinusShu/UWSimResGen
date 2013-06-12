@@ -27,7 +27,8 @@ import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Mode;
 
 public class HomeView extends JPanel implements IView  {
-
+	private final String CONFIG_PATH = "D:/Linus_Documents/Git Projects/UWSimResGen/config";
+	
 	private JFileChooser fc = new JFileChooser();	
 	private JLabel selectFileLabel = new JLabel("Slot Machine Configuration");
 	private JTextField selectFileTF = new JTextField(20);
@@ -231,7 +232,7 @@ public class HomeView extends JPanel implements IView  {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				
-				File f = new File("config/");				
+				File f = new File(CONFIG_PATH);				
 				fc.setCurrentDirectory(f);
 							
 				int result = fc.showOpenDialog(HomeView.this);
@@ -258,7 +259,7 @@ public class HomeView extends JPanel implements IView  {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				
-				File f = new File("config/");				
+				File f = new File(CONFIG_PATH);				
 				fc.setCurrentDirectory(f);				
 				
 				int result = fc.showOpenDialog(HomeView.this);
