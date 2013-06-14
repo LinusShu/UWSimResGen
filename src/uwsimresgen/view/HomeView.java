@@ -58,7 +58,7 @@ public class HomeView extends JPanel implements IView  {
 	private JCheckBox genGamblersRuinCheckBox = new JCheckBox("Simulate Gamblers Ruin Scenario");
 	private JCheckBox genPrizeSizeCheckBox = new JCheckBox("Generate Prize Size DB Table");
 	private JCheckBox genForcedFreeSpinsCheckBox = new JCheckBox("Simulate Forced Free Spins");
-
+	private JCheckBox genBettingStrategyCheckBox = new JCheckBox("Simulate Betting Strategies");
 	
 	private JButton runButton = new JButton("Generate Results");
 
@@ -193,6 +193,7 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 2;
 		optionsPanel.add(genAllBonusSpinsCheckBox, gbc);
+		optionsPanel.add(genBettingStrategyCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 3;
@@ -439,6 +440,21 @@ public class HomeView extends JPanel implements IView  {
 			
 		});
 		
+		this.genBettingStrategyCheckBox.addItemListener(new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent arg0) {
+				if( arg0.getStateChange() == ItemEvent.SELECTED ) {
+					HomeView.this.model.setGenBettingStrategies(true);
+				} else {
+					HomeView.this.model.setGenBettingStrategies(false);
+				}
+				
+			}
+
+			
+		});
+		
 		this.numlinesTF.addFocusListener(new FocusListener() {
 
 			@Override
@@ -516,14 +532,14 @@ public class HomeView extends JPanel implements IView  {
 			if( configFile != null ) {
 				this.selectFileTF.setText( configFile.getName() );
 			} else {
-				this.selectFileTF.setText( "" );
+				this.selectFileTF.setText("");
 			}
 			
 			File blocksFile = this.model.getBlocksFile();
 			if( blocksFile != null ) {
 				this.blocksFileTF.setText( blocksFile.getName() );
 			} else {
-				this.blocksFileTF.setText( "" );
+				this.blocksFileTF.setText("");
 			}
 			
 			this.prefixTF.setText(this.model.getTablePrefix());	
@@ -548,6 +564,7 @@ public class HomeView extends JPanel implements IView  {
 			this.genAllBonusSpinsCheckBox.setEnabled(false);
 			this.genGamblersRuinCheckBox.setEnabled(false);
 			this.genPrizeSizeCheckBox.setEnabled(false);
+			this.genBettingStrategyCheckBox.setEnabled(false);
 			
 			this.numlinesTF.setEnabled(false);
 			this.prefixButton.setEnabled(false);
@@ -570,17 +587,26 @@ public class HomeView extends JPanel implements IView  {
 			if (this.model.getMode() == Mode.MONEY_STORM) {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
+				
+				this.genAllBonusSpinsCheckBox.setVisible(true);
+				this.genGamblersRuinCheckBox.setVisible(true);
+				this.genPrizeSizeCheckBox.setVisible(true);
+				this.genForcedFreeSpinsCheckBox.setVisible(true);
 				this.genAllBonusSpinsCheckBox.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(true);
 				this.genPrizeSizeCheckBox.setEnabled(true);
 				this.genForcedFreeSpinsCheckBox.setEnabled(true);
+				this.genBettingStrategyCheckBox.setVisible(false);
 			} else {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
-				this.genAllBonusSpinsCheckBox.setEnabled(false);
-				this.genGamblersRuinCheckBox.setEnabled(false);
-				this.genPrizeSizeCheckBox.setEnabled(false);
-				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setVisible(true);
+				this.genBettingStrategyCheckBox.setEnabled(true);
+				
+				this.genAllBonusSpinsCheckBox.setVisible(false);
+				this.genGamblersRuinCheckBox.setVisible(false);
+				this.genPrizeSizeCheckBox.setVisible(false);
+				this.genForcedFreeSpinsCheckBox.setVisible(false);
 				
 				this.prefixTF.setText(this.model.getDTTablePrefix());	
 				this.dbnameTF.setText(this.model.getDBName());

@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 
 import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.BasicInfoEntry;
+import uwsimresgen.model.ResultsModel.BettingStrategyEntry;
 import uwsimresgen.model.ResultsModel.Block;
 import uwsimresgen.model.ResultsModel.ForcedFreeSpinEntry;
 import uwsimresgen.model.ResultsModel.GamblersRuinEntry;
@@ -1075,15 +1076,17 @@ public class Database {
 							+ "WINS integer NOT NULL, "
 							+ "LOSSES integer NOT NULL, "
 							+ "LDWS integer NOT NULL, "
-							+ "BONUSWINS integer NOT NULL) ";
+							+ "BONUSWINS integer NOT NULL, " 
+							+ "BASEPAYOUT bigint NOT NULL, "
+							+ "BONUSPAYOUT bigint NOT NULL) ";
 					Database.createTable(tableName, query);
 				}
 
 				// Otherwise, add it to DB.
 				String query = "insert into " + tableName
 						+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, BONUSINITIALIZATIONS, " 
-						+ "BONUSRETRIGGERING, WINS, LOSSES, LDWS, BONUSWINS) "
-						+ "values(?,?,?,?,?,?,?,?,?,?)";
+						+ "BONUSRETRIGGERING, WINS, LOSSES, LDWS, BONUSWINS, BASEPAYOUT, BONUSPAYOUT) "
+						+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
 				try {
 					if (st == null)
 						st = conn.prepareStatement(query);
@@ -1098,6 +1101,8 @@ public class Database {
 					st.setInt(8, bie.getBaseLosses());
 					st.setInt(9, bie.getBaseLDWs());
 					st.setInt(10, bie.getBonusWins());
+					st.setLong(11, bie.getBasePayout());
+					st.setLong(12, bie.getBonusPayout());
 					
 					st.addBatch();
 					batchRequests++;
@@ -1110,6 +1115,79 @@ public class Database {
 				} catch (SQLException e) {
 					throw e;
 				}
+	}
+	
+	public static void insertIntoTable(String tableName,
+			BettingStrategyEntry bse) throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		String strategies = "";
+		String strategiesI = "";
+		String strategiesQ = "";
+		
+		for (int i = 0; i < bse.getStrategies().size(); i++) {
+			strategies += ", WINS_" + i + " integer NOT NULL, "
+					+ "LDWS_" + i + " integer NOT NULL, "
+					+ "LOSSES_" + i + " integer NOT NULL, "
+					+ "CREDITSWON_" + i + " bigint NOT NULL, "
+					+ "TOTAL_WAGER_" + i + " bigint NOT NULL, "
+					+ "BONUSPAYOUT_" + i + " bigint NOT NULL";
+			
+			strategiesI += ", WINS_" + i
+					+ ", LDWS_" + i
+					+ ", LOSSES_" + i
+					+ ", CREDITSWON_" + i
+					+ ", TOTAL_WAGER_" + i
+					+ ", BONUSPAYOUT_" + i;
+			
+			strategiesQ += ",?,?,?,?,?,?";
+		}
+		
+		// If does not exist, create the table
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName
+							+ " (BLOCKID bigint NOT NULL, "
+							+ "NUMSPINS integer NOT NULL, "
+							+ "NUMFREESPINS integer NOT NULL"
+							+ strategies +") ";
+					Database.createTable(tableName, query);
+				}
+
+				// Otherwise, add it to DB.
+				String query = "insert into " + tableName
+						+ "(BLOCKID, NUMSPINS, NUMFREESPINS" + strategiesI + ") "
+						+ "values(?,?,?" + strategiesQ + ")";
+				try {
+					if (st == null)
+						st = conn.prepareStatement(query);
+					
+					st.setLong(1, bse.getBlockID());
+					st.setInt(2, bse.getNumSpins());
+					st.setInt(3, bse.getNumFreeSpins());
+					int index = 4;
+					
+					for (int i = 0; i < bse.getStrategies().size(); i++) {
+						st.setInt(index, bse.getWin(i));
+						st.setInt(++index, bse.getLDW(i));
+						st.setInt(++index, bse.getLoss(i));
+						st.setLong(++index, bse.getCreditWin(i));
+						st.setLong(++index, bse.getWager(i));
+						st.setLong(++index, bse.getBonusPayout(i));
+						index++;
+					}
+					
+					st.addBatch();
+					batchRequests++;
+					
+
+					if (batchRequests >= 1000) {
+						batchRequests = 0;
+						st.executeBatch();
+					}
+				} catch (SQLException e) {
+					throw e;
+				}
+		
 	}
 	
 	/** Dolphin Treasure only database tables **/

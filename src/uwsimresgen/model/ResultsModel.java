@@ -47,6 +47,7 @@ public class ResultsModel {
 	public static String FORCED_FREE_SPINS_TABLE_NAME = "ForcedFreeSpins";
 	public static String BASIC_INFO_TABLE_NAME = "BasicInfo";
 	public static String STREAKS_TABLE_PREFIX = "Streaks";
+	public static String BETTING_STRATEGY_TABLE_NAME = "BettingStrategy";
 
 	public static String DT_TABLE_PREFIX = "DolphinTreasure";
 	
@@ -146,6 +147,7 @@ public class ResultsModel {
 	private boolean genGamblersRuin = false;
 	private boolean genPrizeSize = false;
 	private boolean genForcedFreeSpins = false;
+	private boolean genBettingStrategy = false;
 	
 	private Block currblock = null;
 	private GRBlock currgrblock = null;
@@ -157,6 +159,7 @@ public class ResultsModel {
 	private ForcedFreeSpinEntry currffs = null;
 	private BasicInfoEntry currbie = null;
 	private StreaksEntry currse = null;
+	private BettingStrategyEntry currbse = null;
 	
 	private boolean bonusactive = false;
 
@@ -186,7 +189,7 @@ public class ResultsModel {
 	private char substitute_symbol;
 	private String wbbonus_sequence;
 	
-	/* Dolphin Treasure variables */
+	/* Dolphin Treasure only variables */
 	public static String DP_BASE_HIT_TABLE_NAME = "BaseHitTable";
 	public static String DP_BONUS_HIT_TABLE_NAME = "BonusHitTable";
 	
@@ -313,6 +316,11 @@ public class ResultsModel {
 		this.UpdateViews();
 	}
 	
+	public void setGenBettingStrategies(boolean value) {
+		this.genBettingStrategy = value;
+		this.UpdateViews();
+	}
+	
 	public boolean getGenAllStops() {
 		return this.simulator.getSeqStops();
 	}
@@ -335,6 +343,10 @@ public class ResultsModel {
 	
 	public boolean getGenForcedFreeSpins() {
 		return this.genForcedFreeSpins;
+	}
+	
+	public boolean getGenBettingStrategies() {
+		return this.genBettingStrategy;
 	}
 	
 	public Block getCurrBlock() {
@@ -523,6 +535,10 @@ public class ResultsModel {
 	
 	public String getStreaksTableName() {
 		return this.buildDBTableName(ResultsModel.STREAKS_TABLE_PREFIX);
+	}
+	
+	public String getBettingStrategyTableName() {
+		return this.buildDBTableName(ResultsModel.BETTING_STRATEGY_TABLE_NAME);
 	}
 	
 	public String getOutputLogFilePath() {
@@ -1101,6 +1117,7 @@ public class ResultsModel {
 						.get(ResultsModel.this.currblockindex);
 				ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
 				ResultsModel.this.currbie = new BasicInfoEntry(ResultsModel.this.currblock);
+				ResultsModel.this.currbse = new BettingStrategyEntry(ResultsModel.this.currblock);
 				
 				while (ResultsModel.this.currblock != null
 						&& !ResultsModel.this.cancelled) {
@@ -1181,6 +1198,13 @@ public class ResultsModel {
 											.getSpinResultsDBTableName(), pre_result);
 								
 								ResultsModel.this.ldwResetRequired = false;
+							}
+							
+							if (ResultsModel.this.blockComplete) {
+								Database.flushBatch();
+								Database.insertIntoTable(ResultsModel.this.getBettingStrategyTableName(), currbse);
+								ResultsModel.this.currbse = new BettingStrategyEntry(ResultsModel.this.currblock);
+								Database.flushBatch();
 							}
 						} else {
 							ResultsModel.this.incrementFailedSpins();
@@ -1608,7 +1632,6 @@ public class ResultsModel {
 	
 	protected void incrementDTCurrSpin() {
 		this.currspin++;
-		// TODO Add Dolphin Treasure new entries here
 		// If the currblock runs out of spins 
 		if (this.currblock.incrementCurrSpin()) {
 			// If currblock needs to be repeated
@@ -2486,6 +2509,18 @@ public class ResultsModel {
 		this.warningLog.clear();
 		this.errorLog2.clear();
 		this.warningLog2.clear();
+		
+		this.currbie = null;
+		this.currse = null;
+		this.currpze = null;
+		this.currlpe = null;
+		this.currgre = null;
+		this.currffs = null;
+		this.currbse = null;
+		
+		this.blockComplete = false;
+		this.repeatComplete = false;
+		this.ldwResetRequired = false;
 	}
 
 	/* CLASSES */
@@ -2857,6 +2892,18 @@ public class ResultsModel {
 
 		public ArrayList<Integer> getWBBonusCreditWin() {
 			return this.wbbonuscreditwin;
+		}
+		
+		/** Dolphin Treasure Only **/
+		public void resetCreditsWon() {
+			this.creditswon = 0;
+			this.scatter = 0;
+			this.lineswon = 0;
+			
+			for (int i = 0; i < this.maxlines; i++) {
+				linecreditwinamounts.set(i, 0);
+			}
+			
 		}
 	}
 
@@ -3627,17 +3674,69 @@ public class ResultsModel {
 					r.setNumLines(this.model.currgrblock.numlines);
 					r.setLineBet(this.model.currgrblock.linebet);
 					r.setDenomination(this.model.currgrblock.denomination);
-				} else {
+				} else if (!this.model.genBettingStrategy) {
 					r.setNumLines(this.model.currblock.numlines);
 					r.setLineBet(this.model.currblock.linebet);
 					r.setDenomination(this.model.currblock.denomination);
+				} else {
+					r.setDenomination(this.model.currblock.denomination);
 				}
+				
 				/* calculate payout */
-				if (ResultsModel.this.mode == Mode.DOLPHIN_TREASURE)
-					calculateDTPayout();
-				else 
+				if (ResultsModel.this.mode == Mode.DOLPHIN_TREASURE) {
+					// If simulating different betting strategies
+					if (this.model.genBettingStrategy) {
+						// Calculate different payouts for different strategies
+						for (int i = 0; i < this.model.currbse.getStrategies().size(); i++) {
+							r.setNumLines(currbse.getStrategy(i).getNumLines());
+							r.setLineBet(currbse.getStrategy(i).getLineBet());
+							
+							// If the strategy bets on 1 line
+							if (r.numlines == 1) {
+								// If the 1-line result is already calculated
+								if (currbse.getLine1Result() >= 0) {
+									currbse.updateBSE(i, currbse.getLine1Result() * r.linebet, 
+											r.bonusspin, r.bonusactivated);
+								// If the result is not calculated
+								} else {
+									r.resetCreditsWon();
+									calculateDTPayout();
+									currbse.updateBSE(i, r.creditswon, 
+											r.bonusspin, r.bonusactivated);
+								}
+							// If the strategy bets on 9 lines
+							} else if (r.numlines == 9) {
+								// If the 9-line result is already calculated
+								if (currbse.getLine9Result() >= 0) {
+									currbse.updateBSE(i, currbse.getLine9Result() * r.linebet, 
+											r.bonusspin, r.bonusactivated);
+								// If the result is not calculated
+								} else {
+									r.resetCreditsWon();
+									calculateDTPayout();
+									currbse.updateBSE(i, r.creditswon, 
+											r.bonusspin, r.bonusactivated);
+								}
+							// If the strategy bets on other lines
+							} else {
+								r.resetCreditsWon();
+								calculateDTPayout();
+								currbse.updateBSE(i, r.creditswon, 
+										r.bonusspin, r.bonusactivated);
+							}
+						}
+						
+						currbse.incrementSpins();
+						currbse.resetResults();
+						if(r.bonusspin)
+							currbse.incrementFreeSpins();
+					} else {
+						calculateDTPayout();
+					}
+				} else { 
 					calculatePayout();
-
+				}
+				
 				return r;
 
 			} catch (Exception e) {
@@ -3734,7 +3833,7 @@ public class ResultsModel {
 			calculateDTScatterPayout();
 			
 			// Loop through all the pay lines
-			for (int i = 0; i < this.model.currblock.numlines
+			for (int i = 0; i < r.numlines
 					&& i < this.model.paylines.size(); i++) {
 				Payline p = this.model.paylines.get(i);
 				
@@ -4293,6 +4392,7 @@ public class ResultsModel {
 					Database.flushBatch();
 					Database.insertIntoTable(ResultsModel.this.getBasicInfoTableName(), 
 							ResultsModel.this.currbie);
+					Database.flushBatch();
 				} catch (SQLException e) {
 					ResultsModel.this.outputLog.outputStringAndNewLine("Inserting into BasicInfo DB table encountered problem: "
 							+ e.getMessage());
@@ -5163,7 +5263,6 @@ public class ResultsModel {
 			boolean isLDWasLoss = (r.creditswon - r.linebet * r.numlines) >= 0;
 			
 			this.numspins++;
-			// TODO debug here
 			// If run out of free spins, update the streaks
 			if (bonuswins > 0 && !r.bonusspin) {
 				updateStreaks(bonuswins > 0, (bonuswins - r.numlines * r.linebet) >= 0);
@@ -5204,7 +5303,6 @@ public class ResultsModel {
 					ResultsModel.this.outputLog.outputStringAndNewLine("Inserting into Streaks Table encountered problem: "
 							+ e.getMessage());
 				} finally {
-					blockComplete = false;
 					ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
 				}
 			}
@@ -5259,6 +5357,245 @@ public class ResultsModel {
 		}
 	}
 	
+	public class BettingStrategyEntry {
+		private long blockid = 0;
+		private int numspins = 0;
+		private int numfreespins = 0;
+		
+		private Random ran = new Random();
+		private final List<Bet> bets = new ArrayList<Bet>(45);
+		private final Bet MAX_BET = new Bet((short)5, (short)9);
+		private final Bet MIN_BET = new Bet((short)1, (short)1);
+		private final Bet MIN_MAX_BET = new Bet((short)1, (short)9);
+		
+		private int line1result = -1;
+		private int line9result = -1;
+		private int currstreak = 0;
+		private List<Bet> strategies = new ArrayList<Bet>(5);
+		private List<Long> creditwins = new ArrayList<Long>(5);
+		private List<Long> wagers = new ArrayList<Long>(5);
+		private List<Integer> wins = new ArrayList<Integer>(5);
+		private List<Integer> ldws = new ArrayList<Integer>(5);
+		private List<Integer> losses = new ArrayList<Integer>(5);
+		private List<Long> bonuspayouts = new ArrayList<Long>(5);
+		
+		public BettingStrategyEntry(Block currblock) {
+			if (currblock != null) {
+				this.blockid = currblock.getBlockNumber();
+			}
+			
+			// Populate the bets list for random strategy
+			for (short i = 1; i < 6; i++) {
+				for (short j = 1; j < 10; j++) {
+					bets.add(new Bet(i, j));
+				}
+			}
+			
+			// Populate the other lists
+			strategies.add(0, this.MIN_MAX_BET);
+			strategies.add(1, this.MIN_MAX_BET);
+			strategies.add(2, this.MIN_BET);
+			strategies.add(3, this.MAX_BET);
+			strategies.add(4, getRandomBet());
+			
+			for (int i = 0; i < 5; i++) {
+				wins.add(0);
+				ldws.add(0);
+				losses.add(0);
+				creditwins.add((long)0);
+				wagers.add((long)0);
+				bonuspayouts.add((long)0);
+			}
+		}
+		
+		private Bet getRandomBet() {
+			return this.bets.get(this.ran.nextInt(45));
+		}
+		
+		private void resetResults() {
+			this.line1result = -1;
+			this.line9result = -1;
+		}
+		
+		public long getBlockID() {
+			return this.blockid;
+		}
+		
+		public void incrementSpins() {
+			this.numspins ++;
+		}
+		
+		public int getNumSpins() {
+			return this.numspins;
+		}
+		
+		public void incrementFreeSpins() {
+			this.numfreespins ++;
+		}
+		
+		public int getNumFreeSpins() {
+			return this.numfreespins;
+		}
+		
+		private void incrementWin(int index) {
+			this.wins.set(index, wins.get(index) + 1);
+		}
+		
+		public int getWin(int index) {
+			return this.wins.get(index);
+		}
+		
+		private void incrementLDW(int index) {
+			this.ldws.set(index, ldws.get(index) + 1);
+		}
+		
+		public int getLDW(int index) {
+			return this.ldws.get(index);
+		}
+		
+		private void incrementLoss(int index) {
+			this.losses.set(index, losses.get(index) + 1);
+		}
+		
+		public int getLoss(int index) {
+			return this.losses.get(index);
+		}
+		
+		public void setLine1Result(int value) {
+			this.line1result = value;
+		}
+		
+		public int getLine1Result() {
+			return this.line1result;
+		}
+		
+		public void setLine9Result(int value) {
+			this.line9result = value;
+		}
+		
+		public int getLine9Result() {
+			return this.line9result;
+		}
+		
+		public List<Bet> getStrategies() {
+			return this.strategies;
+		}
+		
+		public Bet getStrategy(int index) {
+			return strategies.get(index);
+		}
+		
+		public void addCreditWin(int index, int value) {
+			this.creditwins.set(index, creditwins.get(index) + (long)value);
+		}
+		
+		public long getCreditWin(int index) {
+			return this.creditwins.get(index);
+		}
+		
+		public void addWager(int index, int value) {
+			this.wagers.set(index, wagers.get(index)+ (long)value);
+		}
+		
+		public long getWager(int index) {
+			return this.wagers.get(index);
+		}
+		
+		public void addBonusPayout(int index, int value) {
+			this.bonuspayouts.set(index, bonuspayouts.get(index)+ (long)value);
+		}
+		
+		public long getBonusPayout(int index) {
+			return this.bonuspayouts.get(index);
+		}
+		
+		public void updateBSE(int strategyid, int winamount, 
+				boolean isBonusSpin, boolean isBonusActivated) {
+			short numline = this.strategies.get(strategyid).getNumLines();
+			short linebet = this.strategies.get(strategyid).getLineBet();
+			
+			// If the 9 line result is not yet calculated
+			if (numline == 9 && this.line9result < 0) {
+				this.line9result = winamount / linebet;
+			// If the 1 line result is not yet calculated
+			} else if (numline == 1 && this.line1result < 0) {	
+				this.line1result = winamount / linebet;
+			}
+			
+			this.addCreditWin(strategyid, winamount);
+			
+			if (!isBonusSpin)
+				this.addWager(strategyid, numline * linebet);
+			else 
+				this.addBonusPayout(strategyid, winamount);
+			
+			this.updateStats(strategyid, winamount, isBonusSpin);
+			
+			// If it is the Optimal strategy
+			if (strategyid == 0 && !isBonusSpin) {
+				updateStreaks(winamount > 0, isBonusActivated);
+			// If it is the Random strategy
+			} else if (strategyid == 4 && !isBonusSpin) {
+				this.strategies.set(4, getRandomBet());
+			}
+			
+			
+		}
+		
+		private void updateStreaks(boolean isWin, boolean isBonusActivated) {
+			// If the spins is a win
+			if (isWin) {
+				// If the current streak is a losing streak, max bet on a winning spin
+				if (this.currstreak < 0) {
+					this.currstreak = 1;
+					if (!isBonusActivated) 
+						this.strategies.set(0, this.MAX_BET);
+				// If the first spin is a win
+				} else if (this.currstreak == 0) {
+					this.currstreak ++;
+					if (!isBonusActivated) 
+						this.strategies.set(0, this.MAX_BET);
+				// If the current streak is a winning streak of length 1, switch back to 
+				// min-max bet on the next spin
+				} else if (this.currstreak >= 1) {
+					this.currstreak ++;
+					if (!isBonusActivated) 
+						this.strategies.set(0, this.MIN_MAX_BET);				
+				}
+			// If the spin is a loss
+			} else {
+				// If current streak is a winning streak, switch back to min-max bet on losing
+				if (this.currstreak > 0) {
+					this.currstreak = -1;
+					this.strategies.set(0, this.MIN_MAX_BET);
+				// If the streak is a losing streak of length 6, then switch bets so the 8th
+				// spin will be played max bet
+				} else if (this.currstreak == -6) {
+					this.currstreak --;
+					this.strategies.set(0, this.MAX_BET);
+				} else {
+					this.currstreak --;
+				}
+			}
+		}
+		
+		public void updateStats(int strategyid, int winamount, boolean isBonusSpin) {
+			int wager = this.strategies.get(strategyid).getWager();
+			
+			if (!isBonusSpin) {
+				if (winamount > 0) {
+					if (winamount - wager >= 0)
+						this.incrementWin(strategyid);
+					else this.incrementLDW(strategyid);
+				} else {
+					this.incrementLoss(strategyid);
+				}
+			} else {
+				incrementWin(strategyid);
+			}
+		}
+	}
+	
 	public class Range {
 		public double low = 0;
 		public double high = 0;
@@ -5304,6 +5641,28 @@ public class ResultsModel {
 			
 		}
 				
+	}
+	
+	public class Bet {
+		private short numlines;
+		private short linebet;
+		
+		public Bet(short linebet, short numlines) {
+			this.numlines = numlines;
+			this.linebet = linebet;
+		}
+		
+		public short getNumLines() {
+			return this.numlines;
+		}
+		
+		public short getLineBet() {
+			return this.linebet;
+		}
+		
+		public int getWager() {
+			return this.numlines * this.linebet;
+		}
 	}
 	
 	public static DecimalFormat twoDForm = new DecimalFormat("#.##");

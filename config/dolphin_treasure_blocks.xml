@@ -8,8 +8,7 @@
 			numspins - integer > 0
 			blockrepeats - integer > 0
 		-->	
-  
-		<block numlines="1" linebet="1" denomination="100" numspins="1000000" blockrepeats="1" />  
+   
 		<block numlines="9" linebet="1" denomination="100" numspins="1000000" blockrepeats="1" /> 
 		
 	</blocks>
