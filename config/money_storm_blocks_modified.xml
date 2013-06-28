@@ -10,27 +10,21 @@
 		-->	
   
 		<block numlines="1" linebet="1" denomination="100" numspins="600" blockrepeats="10000" />  
-		<block numlines="10" linebet="1" denomination="10" numspins="600" blockrepeats="10000" /> 
 		<block numlines="20" linebet="1" denomination="5" numspins="600" blockrepeats="10000" />
 	  
 		<block numlines="1" linebet="1" denomination="100" numspins="1200" blockrepeats="10000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="1200" blockrepeats="10000" />
 		<block numlines="20" linebet="1" denomination="5" numspins="1200" blockrepeats="10000" />
 		
 		<block numlines="1" linebet="1" denomination="100" numspins="2400" blockrepeats="10000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="2400" blockrepeats="10000" />
 		<block numlines="20" linebet="1" denomination="5" numspins="2400" blockrepeats="10000" />
 		
 		<block numlines="1" linebet="1" denomination="100" numspins="6000" blockrepeats="10000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="6000" blockrepeats="10000" />
 		<block numlines="20" linebet="1" denomination="5" numspins="6000" blockrepeats="10000" />
 		
 		<block numlines="1" linebet="1" denomination="100" numspins="15000" blockrepeats="10000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="15000" blockrepeats="10000" />
 		<block numlines="20" linebet="1" denomination="5" numspins="15000" blockrepeats="10000" />
  		
 		<block numlines="1" linebet="1" denomination="100" numspins="30000" blockrepeats="10000" />
-		<block numlines="10" linebet="1" denomination="10" numspins="30000" blockrepeats="10000" />  
 		<block numlines="20" linebet="1" denomination="5" numspins="30000" blockrepeats="10000" /> 
 		
 	</blocks>

@@ -193,22 +193,27 @@ public class HomeView extends JPanel implements IView  {
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 2;
 		optionsPanel.add(genAllBonusSpinsCheckBox, gbc);
+		
+		int gridy = 2;
+		this.gbc.gridx = 0;
+		this.gbc.gridy = ++gridy;
 		optionsPanel.add(genBettingStrategyCheckBox, gbc);
 		
+		
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 3;
+		this.gbc.gridy = ++gridy;
 		optionsPanel.add(genGamblersRuinCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 4;
+		this.gbc.gridy = ++gridy;
 		optionsPanel.add(genPrizeSizeCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 5;
+		this.gbc.gridy = ++gridy;
 		optionsPanel.add(genForcedFreeSpinsCheckBox, gbc);
 		
 		this.gbc.gridx = 0;
-		this.gbc.gridy = 6;
+		this.gbc.gridy = ++gridy;
 		optionsPanel.add(genNoTableCheckBox, gbc);
 		
 		this.gbc.gridx = 1;
@@ -589,22 +594,23 @@ public class HomeView extends JPanel implements IView  {
 				this.genNoTableCheckBox.setEnabled(true);
 				
 				this.genAllBonusSpinsCheckBox.setVisible(true);
-				this.genGamblersRuinCheckBox.setVisible(true);
 				this.genPrizeSizeCheckBox.setVisible(true);
 				this.genForcedFreeSpinsCheckBox.setVisible(true);
+				
 				this.genAllBonusSpinsCheckBox.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(true);
 				this.genPrizeSizeCheckBox.setEnabled(true);
 				this.genForcedFreeSpinsCheckBox.setEnabled(true);
+				
 				this.genBettingStrategyCheckBox.setVisible(false);
 			} else {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genBettingStrategyCheckBox.setVisible(true);
 				this.genBettingStrategyCheckBox.setEnabled(true);
+				this.genGamblersRuinCheckBox.setEnabled(true);
+				this.genAllBonusSpinsCheckBox.setEnabled(true);
 				
-				this.genAllBonusSpinsCheckBox.setVisible(false);
-				this.genGamblersRuinCheckBox.setVisible(false);
 				this.genPrizeSizeCheckBox.setVisible(false);
 				this.genForcedFreeSpinsCheckBox.setVisible(false);
 				
@@ -627,6 +633,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
 				
 				this.numlinesLabel.setVisible(true);
 				this.numlinesTF.setVisible(true);
@@ -643,6 +650,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genPrizeSizeCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
 			}
 			
 			else if (this.model.getGenPrizeSize()) {
@@ -651,6 +659,7 @@ public class HomeView extends JPanel implements IView  {
 				this.blocksFileTF.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
 				
 				if (this.model.getGenAllBonusSpin()) {
 					this.genAllStopsCheckBox.setEnabled(false);
@@ -671,6 +680,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
 			}
 			
 			else if (this.model.getGenForcedFreeSpins()){
@@ -682,6 +692,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genAllBonusSpinsCheckBox.setEnabled(false);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genPrizeSizeCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
 			
 				
 			} else {
