@@ -8,7 +8,7 @@
 			numspins - integer > 0
 			blockrepeats - integer > 0
 		-->	
-   
+   		 
 		<block numlines="1" linebet="1" denomination="90" numspins="600" blockrepeats="10000" /> 
 		<block numlines="9" linebet="1" denomination="10" numspins="600" blockrepeats="10000" />
 	  	
@@ -26,6 +26,10 @@
  		
 		<block numlines="1" linebet="1" denomination="90" numspins="30000" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="30000" blockrepeats="10000" />
+		
+		<!--  
+		<block numlines="9" linebet="1" denomination="10" numspins="1000000" blockrepeats="1" />
+		-->
 	</blocks>
 	
 	<grblocks>

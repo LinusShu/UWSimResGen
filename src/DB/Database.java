@@ -32,8 +32,10 @@ import uwsimresgen.model.ResultsModel.WinType;
 
 public class Database {
 
-	public static String DEFAULT_DB_NAME = "MoneyStormDB";
-
+	public static String DEFAULT_DB_NAME = "SandsofSplendorDB";
+	public static String DP_DB_NAME = "DolphinTreasureDB";
+	public static String SOS_DB_NAME = "SandsofSplendorDB";
+	
 	// Change me to modify the database name.
 	private static String dbName = DEFAULT_DB_NAME;
 	private static String URL = "jdbc:derby:" + dbName + ";create=true";
@@ -70,12 +72,14 @@ public class Database {
 	static PreparedStatement grs = null;
 	static PreparedStatement pss = null;
 	static PreparedStatement ffss = null;
+	static PreparedStatement soss = null;
 	
 	static int batchRequests = 0;
 	static int lpeBatchRequests = 0;
 	static int greBatchRequests = 0;
 	static int pseBatchRequests = 0;
 	static int ffseBatchRequests = 0;
+	static int sosBatchRequests = 0;
 	
 	public static void setMaxLines(int maxLines) {
 		Database.maxLines = maxLines;
@@ -108,24 +112,23 @@ public class Database {
 	public static void insertIntoTable(String tableName,
 			PaytableEntry paytableEntry) throws SQLException {
 		tableName = tableName.toUpperCase();
-		String parSequence = convertToPARSequence(paytableEntry.getSequence());
+
 		// If does not exist, create the table
 		if (!Database.doesTableExist(tableName)) {
 			String query = "create table " + tableName + " "
 					+ "(ENTRYID bigint NOT NULL, "
 					+ "WINCODE varchar(10) NOT NULL, "
-					+ "PARCOMBO varchar(20) NOT NULL, "
 					+ "SEQUENCE varchar(10) NOT NULL, "
 					+ "PAYOUT integer NOT NULL, "
-					+ "TYPE varchar(10) NOT NULL, "
+					+ "TYPE varchar(20) NOT NULL, "
 					+ "HITS bigint NOT NULL)";
 			Database.createTable(tableName, query);
 		}
 
 		// Otherwise, add it to DB.
 		String query = "insert into " + tableName
-				+ "(ENTRYID,WINCODE,PARCOMBO,SEQUENCE,PAYOUT,TYPE,HITS) "
-				+ "values(?,?,?,?,?,?,?)";
+				+ "(ENTRYID,WINCODE,SEQUENCE,PAYOUT,TYPE,HITS) "
+				+ "values(?,?,?,?,?,?)";
 		try {
 			if (st == null)
 				st = conn.prepareStatement(query);
@@ -136,11 +139,10 @@ public class Database {
 				for (int i=0; i < wbbonuspay.length; i++) {
 					st.setLong(1, paytableEntry.getEntryID());
 					st.setString(2, paytableEntry.getWinCode());
-					st.setString(3, parSequence);
-					st.setString(4, paytableEntry.getSequence());
-					st.setInt(5, wbbonuspay[i]);
-					st.setString(6, paytableEntry.getType().toString());
-					st.setLong(7, 0);
+					st.setString(3, paytableEntry.getSequence());
+					st.setInt(4, wbbonuspay[i]);
+					st.setString(5, paytableEntry.getType().toString());
+					st.setLong(6, 0);
 					
 					st.addBatch();
 					batchRequests++;
@@ -148,11 +150,10 @@ public class Database {
 			} else {
 				st.setLong(1, paytableEntry.getEntryID());
 				st.setString(2, paytableEntry.getWinCode());
-				st.setString(3, parSequence);
-				st.setString(4, paytableEntry.getSequence());
-				st.setInt(5, paytableEntry.getPayout());
-				st.setString(6, paytableEntry.getType().toString());
-				st.setLong(7, 0);
+				st.setString(3, paytableEntry.getSequence());
+				st.setInt(4, paytableEntry.getPayout());
+				st.setString(5, paytableEntry.getType().toString());
+				st.setLong(6, 0);
 				
 				st.addBatch();
 				batchRequests++;
@@ -494,45 +495,47 @@ public class Database {
 					+ "NUMOFLINES smallint NOT NULL, "
 					+ "NUMOFFREESPIN integer NOT NULL, "
 					+ "AVG_LOSSBALANCE double NOT NULL, "
+					+ "MEDIAN_LOSSBALANCE integer NOT NULL, "
 					+ "SD_LOSSBALANCE integer NOT NULL, "
+					+ "AVG_PAYBACK double NOT NULL, "
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
 					+ "LDWS integer NOT NULL"
-					+ ranges 
-					+ ", MEDIAN integer NOT NULL"
-					+ bas + ")";
+					+ ranges + bas + ")";
 			Database.createTable(tableName, query);
 		}
 		
 		// Otherwise, add the LossPercentageEntry to the table
 		String query = "insert into " + tableName
-				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, AVG_LOSSBALANCE, SD_LOSSBALANCE, WINCOUNTS, LOSSCOUNTS, LDWS" 
-				+ rangesI + ", MEDIAN" + basI + ") "
-				+ "values(?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
+				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, " 
+				+ "AVG_LOSSBALANCE, MEDIAN_LOSSBALANCE, SD_LOSSBALANCE, AVG_PAYBACK, " 
+				+ "WINCOUNTS, LOSSCOUNTS, LDWS" 
+				+ rangesI + basI + ") "
+				+ "values(?,?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
 		
 		try {
 			if (lps == null)
 				lps = conn.prepareStatement(query);
 			
-			int index = 10;
+			
 			lps.setLong(1, lpe.getBlockNum());
 			lps.setInt(2, lpe.getNumSpins());
 			lps.setShort(3, lpe.getNumLine());
 			lps.setInt(4, lpe.getNumFreeSpins());
 			lps.setDouble(5, lpe.getAvgLossBalance());
-			lps.setInt(6, (int)lpe.getSd());
-			lps.setInt(7, lpe.getWin());
-			lps.setInt(8, lpe.getLoss());
-			lps.setInt(9, lpe.getLdw());
+			lps.setInt(6, -lpe.getLossPercentageMedian());
+			lps.setInt(7, (int)-lpe.getSd());
+			lps.setDouble(8, lpe.getAvgPaybackPercentage());
+			lps.setInt(9, lpe.getWin());
+			lps.setInt(10, lpe.getLoss());
+			lps.setInt(11, lpe.getLdw());
 			
+			int index = 12;
 			
 			for (int i = 0; i < lpe.getLossPercentages().size(); i++) {
 				lps.setInt(index, lpe.getLossPercentage(i));
 				index++;
 			}
-			
-			lps.setInt(index, lpe.getLossPercentageMedian());
-			index++;
 			
 			for (int i = 0; i < lpe.getBonusActivations().size(); i++) {
 				lps.setInt(index, lpe.getAvgBonusActivation(i));
@@ -1280,6 +1283,100 @@ public class Database {
 			throw e;
 		}
 	}
+	
+	// Inserts a result into the Sands of Splendor spin results table; 
+	// if the table does not exist it will be created first.
+	public static void insertIntoSoSTable(String tableName, Result result)
+			throws SQLException {
+		tableName = tableName.toUpperCase();
+		
+		String lineWins = "";
+		String lineWinsI = "";
+		String lineWinsQ = "";
+		
+		for (int i = 0; i < maxLines; i++) {
+			lineWins += ", L" + (i+1) + "_CR smallint NOT NULL"
+					+ ", L" + (i+1) + "_NAME varchar(10) NOT NULL";
+			
+			lineWinsI += ", L" + (i+1) + "_CR"
+					+ ", L" + (i+1) + "_NAME";
+			
+			lineWinsQ += ",?,?";
+		}
+		
+		// If does not exist, create the table
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName 
+					+ " (RECORDNUMBER bigint NOT NULL, "
+					+ "BLOCKNUMBER bigint NOT NULL, "
+					+ "REPEATNUMBER integer NOT NULL, "
+					+ "REELSTOP1 smallint NOT NULL, "
+					+ "REELSTOP2 smallint NOT NULL, "
+					+ "REELSTOP3 smallint NOT NULL, "
+					+ "REELSTOP4 smallint NOT NULL, "
+					+ "REELSTOP5 smallint NOT NULL, "
+					+ "LINES smallint NOT NULL, "
+					+ "LINEBET smallint NOT NULL, "
+					+ "DENOMINATION float NOT NULL, "
+					+ "CREDITSWON integer NOT NULL, "
+					+ "LINESWON smallint NOT NULL, "
+					+ "SCATTER int NOT NULL, "
+					+ "BONUSACTIVATED boolean NOT NULL, "
+					+ "BONUSSPIN boolean NOT NULL, "
+					+ "FREESPINSAWARDED smallint NOT NULL" 
+					+ lineWins + ")";
+			Database.createTable(tableName, query);
+		}
+		
+		
+		// Otherwise, add it to DB.
+		String query = "insert into "
+				+ tableName
+				+ " (RECORDNUMBER, BLOCKNUMBER, REPEATNUMBER, REELSTOP1, REELSTOP2, REELSTOP3, REELSTOP4, REELSTOP5, LINES, " 
+				+ "LINEBET, DENOMINATION, CREDITSWON, LINESWON, SCATTER, BONUSACTIVATED, BONUSSPIN, FREESPINSAWARDED"
+				+ lineWinsI + ") " + "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + lineWinsQ + ")";
+		
+		try {
+			if ( st == null)
+				st = conn.prepareStatement(query);
+			
+			st.setLong(1, result.getRecordNumber());
+			st.setLong(2, result.getBlockNumber());
+			st.setInt(3, result.getRepeatNumber());
+			st.setShort(4, result.getReelStop1());
+			st.setShort(5, result.getReelStop2());
+			st.setShort(6, result.getReelStop3());
+			st.setShort(7, result.getReelStop4());
+			st.setShort(8, result.getReelStop5());
+			st.setShort(9, result.getNumLines());
+			st.setShort(10, result.getLineBet());
+			st.setDouble(11, result.getFormattedDenomination());
+			st.setInt(12, result.getCreditsWon());
+			st.setShort(13, result.getLinesWon());
+			st.setInt(14, result.getScatter());
+			st.setBoolean(15, result.getBonusActivated());
+			st.setBoolean(16, result.getBonusSpin());
+			st.setShort(17, result.getFreeSpinsAwarded());
+
+			int index = 17;
+			
+			for (int i = 0; i < result.getLineCreditWinAmounts().size(); i++) {	
+				st.setInt(++index, result.getLineCreditWinAmount(i));
+				st.setString(++index, result.getLineWinName(i));
+			}
+			
+
+			st.addBatch();
+			batchRequests++;
+			if (batchRequests >= 1000) {
+				batchRequests = 0;
+				st.executeBatch();
+			}
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+	
 
 	public static void flushBatch() throws SQLException {
 		if (batchRequests > 0) {
@@ -1390,6 +1487,12 @@ public class Database {
 				ffss.close();
 				ffss = null;
 			}
+			
+			if (soss != null) {
+				soss.close();
+				soss = null;
+			}
+			
 			conn.commit();
 			DriverManager.getConnection(URL_SHUTDOWN);
 		} catch (SQLException se) {

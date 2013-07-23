@@ -27,7 +27,7 @@ import uwsimresgen.model.ResultsModel;
 import uwsimresgen.model.ResultsModel.Mode;
 
 public class HomeView extends JPanel implements IView  {
-	private final String CONFIG_PATH = "D:/Linus_Documents/Git Projects/UWSimResGen/config";
+	private final String CONFIG_PATH = "config";
 	
 	private JFileChooser fc = new JFileChooser();	
 	private JLabel selectFileLabel = new JLabel("Slot Machine Configuration");
@@ -49,12 +49,13 @@ public class HomeView extends JPanel implements IView  {
 	private JLabel modeLabel = new JLabel("Game Modes:");
 	private JRadioButton msButton = new JRadioButton("Money Storm");
 	private JRadioButton dtButton = new JRadioButton("Dolphin Treasure");
+	private JRadioButton sosButton = new JRadioButton("Sands of Splendor");
 	private ButtonGroup modeGroup = new ButtonGroup();
 	
 	private JLabel optionsLabel = new JLabel("Options:");
-	private JCheckBox genAllStopsCheckBox = new JCheckBox("Generate All Reel Stops?");
+	private JCheckBox genAllStopsCheckBox = new JCheckBox("Simulate All Reel Stops");
 	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
-	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
+	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Simulate Blocks");
 	private JCheckBox genGamblersRuinCheckBox = new JCheckBox("Simulate Gamblers Ruin Scenario");
 	private JCheckBox genPrizeSizeCheckBox = new JCheckBox("Generate Prize Size DB Table");
 	private JCheckBox genForcedFreeSpinsCheckBox = new JCheckBox("Simulate Forced Free Spins");
@@ -90,6 +91,7 @@ public class HomeView extends JPanel implements IView  {
 		// Group up mode radio buttons
 		modeGroup.add(msButton);
 		modeGroup.add(dtButton);
+		modeGroup.add(sosButton);
 		
 		this.layout = new GridBagLayout();
 		this.gbc = new GridBagConstraints();
@@ -162,6 +164,7 @@ public class HomeView extends JPanel implements IView  {
 		modePanel.add(modeLabel);
 		modePanel.add(msButton);
 		modePanel.add(dtButton);
+		modePanel.add(sosButton);
 		
 		this.gbc.gridx = 0;
 		this.gbc.gridy = 5;
@@ -352,6 +355,14 @@ public class HomeView extends JPanel implements IView  {
 			public void actionPerformed(ActionEvent arg0) {
 				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.DOLPHIN_TREASURE);
 				HomeView.this.model.setDBName("DolphinTreasureDB");
+			}
+		});
+		
+		this.sosButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				HomeView.this.model.setMode(uwsimresgen.model.ResultsModel.Mode.SANDS_OF_SPLENDOR);
+				HomeView.this.model.setDBName("SandsofSplendorDB");
 			}
 		});
 		
@@ -563,6 +574,7 @@ public class HomeView extends JPanel implements IView  {
 			
 			this.msButton.setEnabled(false);
 			this.dtButton.setEnabled(false);
+			this.sosButton.setEnabled(false);
 			
 			this.genAllStopsCheckBox.setEnabled(false);
 			this.genNoTableCheckBox.setEnabled(false);
@@ -589,6 +601,19 @@ public class HomeView extends JPanel implements IView  {
 			this.prefixTF.setEnabled(true);
 			this.dbnameTF.setEnabled(true);
 			
+			this.numlinesLabel.setVisible(false);
+			this.numlinesTF.setVisible(false);
+			
+			//this.msButton.setEnabled(true);
+			//this.dtButton.setEnabled(true);
+			this.sosButton.setEnabled(true);
+			
+			// Only for custom build
+			this.sosButton.setSelected(true);
+			this.msButton.setEnabled(false);
+			this.dtButton.setEnabled(false);
+			this.sosButton.setEnabled(false);
+			
 			if (this.model.getMode() == Mode.MONEY_STORM) {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
@@ -603,7 +628,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genForcedFreeSpinsCheckBox.setEnabled(true);
 				
 				this.genBettingStrategyCheckBox.setVisible(false);
-			} else {
+			} else if (this.model.getMode() == Mode.DOLPHIN_TREASURE) {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genBettingStrategyCheckBox.setVisible(true);
@@ -616,13 +641,23 @@ public class HomeView extends JPanel implements IView  {
 				
 				this.prefixTF.setText(this.model.getDTTablePrefix());	
 				this.dbnameTF.setText(this.model.getDBName());
+			} else {
+				this.genAllStopsCheckBox.setEnabled(true);
+				this.genNoTableCheckBox.setEnabled(true);
+				this.genBettingStrategyCheckBox.setVisible(false);
+				this.genBettingStrategyCheckBox.setEnabled(false);
+				this.genGamblersRuinCheckBox.setEnabled(true);
+				this.genAllBonusSpinsCheckBox.setEnabled(true);
+				this.genPrizeSizeCheckBox.setVisible(false);
+				this.genForcedFreeSpinsCheckBox.setVisible(false);
+				
+				this.prefixTF.setText(this.model.getSoSTablePrefix());	
+				this.dbnameTF.setText(this.model.getDBName());
+				
+				// Custom build only
+				this.genGamblersRuinCheckBox.setVisible(false);
 			}
 			
-			this.numlinesLabel.setVisible(false);
-			this.numlinesTF.setVisible(false);
-			
-			this.msButton.setEnabled(true);
-			this.dtButton.setEnabled(true);
 			
 			if( this.model.getGenAllStops() ) {
 				this.blocksFile.setEnabled(false);
