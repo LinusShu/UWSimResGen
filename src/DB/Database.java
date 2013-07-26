@@ -522,9 +522,9 @@ public class Database {
 			lps.setInt(2, lpe.getNumSpins());
 			lps.setShort(3, lpe.getNumLine());
 			lps.setInt(4, lpe.getNumFreeSpins());
-			lps.setDouble(5, lpe.getAvgLossBalance());
+			lps.setDouble(5, -lpe.getAvgLossBalance());
 			lps.setInt(6, -lpe.getLossPercentageMedian());
-			lps.setInt(7, (int)-lpe.getSd());
+			lps.setInt(7, (int)lpe.getSd());
 			lps.setDouble(8, lpe.getAvgPaybackPercentage());
 			lps.setInt(9, lpe.getWin());
 			lps.setInt(10, lpe.getLoss());
@@ -1068,56 +1068,56 @@ public class Database {
 		tableName = tableName.toUpperCase();
 		
 		// If does not exist, create the table
-				if (!Database.doesTableExist(tableName)) {
-					String query = "create table " + tableName + " "
-							+ "(BLOCKID bigint NOT NULL, "
-							+ "NUMLINES integer NOT NULL, "
-							+ "NUMSPINS integer NOT NULL, "
-							+ "NUMFREESPINS integer NOT NULL, "
-							+ "BONUSINITIALIZATIONS integer NOT NULL, "
-							+ "BONUSRETRIGGERING integer NOT NULL, "
-							+ "WINS integer NOT NULL, "
-							+ "LOSSES integer NOT NULL, "
-							+ "LDWS integer NOT NULL, "
-							+ "BONUSWINS integer NOT NULL, " 
-							+ "BASEPAYOUT bigint NOT NULL, "
-							+ "BONUSPAYOUT bigint NOT NULL) ";
-					Database.createTable(tableName, query);
-				}
+		if (!Database.doesTableExist(tableName)) {
+			String query = "create table " + tableName + " "
+					+ "(BLOCKID bigint NOT NULL, "
+					+ "NUMLINES integer NOT NULL, "
+					+ "NUMSPINS integer NOT NULL, "
+					+ "NUMFREESPINS integer NOT NULL, "
+					+ "BONUSINITIALIZATIONS integer NOT NULL, "
+					+ "BONUSRETRIGGERING integer NOT NULL, "
+					+ "WINS integer NOT NULL, "
+					+ "LOSSES integer NOT NULL, "
+					+ "LDWS integer NOT NULL, "
+					+ "BONUSWINS integer NOT NULL, " 
+					+ "BASEPAYOUT bigint NOT NULL, "
+					+ "BONUSPAYOUT bigint NOT NULL) ";
+			Database.createTable(tableName, query);
+		}
 
-				// Otherwise, add it to DB.
-				String query = "insert into " + tableName
-						+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, BONUSINITIALIZATIONS, " 
-						+ "BONUSRETRIGGERING, WINS, LOSSES, LDWS, BONUSWINS, BASEPAYOUT, BONUSPAYOUT) "
-						+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
-				try {
-					if (st == null)
-						st = conn.prepareStatement(query);
-					
-					st.setLong(1, bie.getBlockID());
-					st.setInt(2, bie.getNumLines());
-					st.setInt(3, bie.getNumSpins());
-					st.setInt(4, bie.getNumFreeSpins());
-					st.setInt(5, bie.getNumBI());
-					st.setInt(6, bie.getNumBR());
-					st.setInt(7, bie.getBaseWins());
-					st.setInt(8, bie.getBaseLosses());
-					st.setInt(9, bie.getBaseLDWs());
-					st.setInt(10, bie.getBonusWins());
-					st.setLong(11, bie.getBasePayout());
-					st.setLong(12, bie.getBonusPayout());
-					
-					st.addBatch();
-					batchRequests++;
-					
+		// Otherwise, add it to DB.
+		String query = "insert into " + tableName
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, BONUSINITIALIZATIONS, " 
+				+ "BONUSRETRIGGERING, WINS, LOSSES, LDWS, BONUSWINS, BASEPAYOUT, BONUSPAYOUT) "
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
+		try {
+			if (st == null)
+				st = conn.prepareStatement(query);
+			
+			st.setLong(1, bie.getBlockID());
+			st.setInt(2, bie.getNumLines());
+			st.setInt(3, bie.getNumSpins());
+			st.setInt(4, bie.getNumFreeSpins());
+			st.setInt(5, bie.getNumBI());
+			st.setInt(6, bie.getNumBR());
+			st.setInt(7, bie.getBaseWins());
+			st.setInt(8, bie.getBaseLosses());
+			st.setInt(9, bie.getBaseLDWs());
+			st.setInt(10, bie.getBonusWins());
+			st.setLong(11, bie.getBasePayout());
+			st.setLong(12, bie.getBonusPayout());
+			
+			st.addBatch();
+			batchRequests++;
+			
 
-					if (batchRequests >= 1000) {
-						batchRequests = 0;
-						st.executeBatch();
-					}
-				} catch (SQLException e) {
-					throw e;
-				}
+			if (batchRequests >= 1000) {
+				batchRequests = 0;
+				st.executeBatch();
+			}
+		} catch (SQLException e) {
+			throw e;
+		}
 	}
 	
 	public static void insertIntoTable(String tableName,
@@ -1389,6 +1389,8 @@ public class Database {
 				throw e;
 			}
 			
+		} else {
+			st = null;
 		}
 	}
 

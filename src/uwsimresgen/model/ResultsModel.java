@@ -893,6 +893,8 @@ public class ResultsModel {
 					boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 					Result pre_result = null;
 					int ts = 0;
+					int currbonussession = 0;
+					int maxbonussession = 0;
 	
 					// Calculate the number of total spins if not in GamblersRuin mode
 					if (! ResultsModel.this.genGamblersRuin) {
@@ -947,6 +949,12 @@ public class ResultsModel {
 										if (! ResultsModel.this.bonusactive) {
 											total_freespin = 0;
 											ResultsModel.this.simulator.setSeqStops(orign_mode);
+											
+											if (currbonussession > 0) {
+												if (currbonussession > maxbonussession)
+													maxbonussession = currbonussession;
+												currbonussession = 0;
+											}
 										}
 										
 										Result r = ResultsModel.this.simulator
@@ -968,25 +976,30 @@ public class ResultsModel {
 											
 											// If there are free spins awarded
 											if (r.freespinsawarded > 0) { 
-												total_freespin += r.freespinsawarded;
-												
-												// Check if the number of free spins awarded exceeds the allowed
-												if (total_freespin > ResultsModel.this.MAX_FREESPINS) 
-													extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
-												else 
-													extra_freespin = r.freespinsawarded;
-												
-												// Update the BonusHitCounts list if not in bonus mode
-												if (!r.bonusspin)
-													ResultsModel.this.updateBonusSpinCounts(r.freespinsawarded);
-												
-												
-												ResultsModel.this.addFreeSpins(extra_freespin);
+												if (total_freespin < ResultsModel.this.MAX_FREESPINS) {
+													total_freespin += r.freespinsawarded;
+													
+													// Check if the number of free spins awarded exceeds the allowed
+													if (total_freespin > ResultsModel.this.MAX_FREESPINS) {
+														extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
+														// Max out the total_freespin
+														total_freespin = ResultsModel.this.MAX_FREESPINS;
+													} else {
+														extra_freespin = r.freespinsawarded;
+													}
+													// Update the BonusHitCounts list if not in bonus mode
+													if (!r.bonusspin)
+														ResultsModel.this.updateBonusSpinCounts(r.freespinsawarded);
+													
+													
+													ResultsModel.this.addFreeSpins(extra_freespin);
+												}
 											}
 											
 											
 											// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
-											if (orign_mode || ResultsModel.this.genAllBonusSpins && r.bonusactivated) {
+											if ((orign_mode || ResultsModel.this.genAllBonusSpins)
+													&& extra_freespin > 0) {
 												ts += extra_freespin;
 												ResultsModel.this.setTotalSpins(ts);
 												ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
@@ -998,7 +1011,8 @@ public class ResultsModel {
 	
 											
 											if (ResultsModel.this.bonusactive) {
-												ResultsModel.this.decrementFreeSpins();									
+												ResultsModel.this.decrementFreeSpins();		
+												currbonussession++;
 											}
 											
 											// Update the LDW information on the previous spin result
@@ -1082,6 +1096,7 @@ public class ResultsModel {
 								Database.flushBatch();
 		
 								ResultsModel.this.stop();
+								ResultsModel.this.outputLog.outputStringAndNewLine("Max bonus session: " + maxbonussession);
 							} // If not gamblers ruin or forced spin
 						} catch (Exception e) {
 							ResultsModel.this.stop();
@@ -1133,6 +1148,8 @@ public class ResultsModel {
 		boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 		Result pre_result = null;
 		int ts = 0;
+		int currbonussession = 0;
+		int maxbonussession = 0;
 
 		// Calculate the number of total spins
 		for (Block b : ResultsModel.this.blocks) 
@@ -1174,6 +1191,12 @@ public class ResultsModel {
 							// Reset total_freespin and game mode
 							if (! ResultsModel.this.bonusactive) {
 								ResultsModel.this.simulator.setSeqStops(orign_mode);
+								
+								if (currbonussession > 0) {
+									if (currbonussession > maxbonussession)
+										maxbonussession = currbonussession;
+									currbonussession = 0;
+								}
 							}
 							
 							Result r = ResultsModel.this.simulator
@@ -1208,7 +1231,8 @@ public class ResultsModel {
 	
 								
 								if (ResultsModel.this.bonusactive) {
-									ResultsModel.this.decrementFreeSpins();									
+									ResultsModel.this.decrementFreeSpins();	
+									currbonussession++;
 								}
 								
 								// Update the LDW information on the previous spin result
@@ -1294,6 +1318,7 @@ public class ResultsModel {
 					Database.flushBatch();
 					
 					ResultsModel.this.stop();
+					ResultsModel.this.outputLog.outputStringAndNewLine("Max bonus session: " + maxbonussession);
 				} // If not gamblers ruin mode
 			} catch (Exception e) {
 				ResultsModel.this.stop();
@@ -1312,6 +1337,12 @@ public class ResultsModel {
 	protected void doSandsofSplendorMode() {
 		boolean orign_mode = ResultsModel.this.simulator.getSeqStops();
 		int ts = 0;
+		int total_freespin = 0;
+		int extra_freespin = 0;
+		int maxfreespin = 0;
+		int currbonussession = 0;
+		int maxbonussession = 0;
+		
 		// Calculate the number of total spins
 		for (Block b : ResultsModel.this.blocks) 
 			ts += b.getNumSpins() * b.getNumRepeats();
@@ -1345,6 +1376,14 @@ public class ResultsModel {
 						// Reset total_freespin and game mode
 						if (! ResultsModel.this.bonusactive) {
 							ResultsModel.this.simulator.setSeqStops(orign_mode);
+							total_freespin = 0;
+							
+							if (currbonussession > 0) {
+								if (currbonussession > maxbonussession)
+									maxbonussession = currbonussession;
+								
+								currbonussession = 0;
+							}
 						}
 						
 						Result r = ResultsModel.this.simulator
@@ -1358,35 +1397,47 @@ public class ResultsModel {
 									.getBlockNumber());
 							r.setRepeatNumber(ResultsModel.this.currblockrepeat);
 							
-							int tmp = 0;
 							// If there are free spins awarded
 							if (r.freespinsawarded > 0) { 
-								tmp = ResultsModel.this.freespins;
-								ResultsModel.this.addFreeSpins(r.freespinsawarded);
-								
-								// Check if the number of free spins exceeds the up limit
-								if (ResultsModel.this.freespins > 200) {
-									tmp = 200 - tmp;
-									ResultsModel.this.freespins = 200;
-								} else {
-									tmp = r.freespinsawarded;
-								}
-								// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
-								// and or genAllBonusSpins mode.
-								if ((orign_mode || ResultsModel.this.genAllBonusSpins) 
-										&& r.bonusactivated) {
-									ts += tmp;
-									ResultsModel.this.setTotalSpins(ts);
-									ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
-									.addNumSpins(tmp);
-									currlpe.incrementNumFreeSpins(tmp);
-									ResultsModel.this.simulator.setSeqStops(false);
+								// Check if the total # of freespins in the current bonus mode session exceeds the up limit
+								currbonussession += r.freespinsawarded;
+								if (total_freespin < ResultsModel.this.MAX_FREESPINS) {
+									total_freespin += r.freespinsawarded;
+									
+									// Check if the number of free spins awarded exceeds the allowed
+									if (total_freespin > ResultsModel.this.MAX_FREESPINS) {
+										extra_freespin = ResultsModel.this.MAX_FREESPINS - (total_freespin - r.freespinsawarded);
+										// Max out the total_freespin
+										total_freespin = ResultsModel.this.MAX_FREESPINS;
+									} else {
+										extra_freespin = r.freespinsawarded;
+									}
+									
+									if (genAllBonusSpins || orign_mode)
+										ResultsModel.this.addFreeSpins(extra_freespin);
+									
+									// Debug info on max number of free spins
+									if (ResultsModel.this.freespins > maxfreespin)
+										maxfreespin = ResultsModel.this.freespins;
+									
+									// Add extra spins to total spin when get free spins in Do-All-Reel-Stops mode
+									// and or genAllBonusSpins mode.
+									if ((orign_mode || ResultsModel.this.genAllBonusSpins) 
+											&& extra_freespin > 0) {
+										ts += extra_freespin;
+										ResultsModel.this.setTotalSpins(ts);
+										ResultsModel.this.blocks.get(ResultsModel.this.currblockindex)
+										.addNumSpins(extra_freespin);
+										ResultsModel.this.simulator.setSeqStops(false);
+										extra_freespin = 0;
+									}
+									currlpe.incrementNumFreeSpins(extra_freespin);
 								}
 							}
 
 							
 							if (ResultsModel.this.bonusactive) {
-								ResultsModel.this.decrementFreeSpins();									
+								ResultsModel.this.decrementFreeSpins();	
 							}
 				
 								
@@ -1399,14 +1450,11 @@ public class ResultsModel {
 							ResultsModel.this.incrementCurrSpin();
 			
 							ResultsModel.this.currbie.updateBIE(r);
-							// Only generate streak results if not in All-Reel-Stop mode
 							
 							// Update the LossPercentageTable entry
 							ResultsModel.this.updateLPE(r);
 							
 							if (ResultsModel.this.blockComplete) {
-								Database.flushBatch();
-								
 								if (this.currblockindex < ResultsModel.this.blocks.size()) {
 									currlpe = new LossPercentageEntry(ResultsModel.this.blocks.get(currblockindex));
 								}
@@ -1422,14 +1470,14 @@ public class ResultsModel {
 						}
 					
 				} //If all blocks done
-					Database.flushBatch();
-					
-					// Update the base & bonus hit counts
-					Database.updateTableHit(ResultsModel.this.getBasePaytableDBTableName(), 
-							ResultsModel.this.basehittable);
-					Database.updateTableHit(ResultsModel.this.getBonusPaytableDBTableName(), 
-							ResultsModel.this.bonushittable);
-					ResultsModel.this.stop();
+				
+				// Update the base & bonus hit counts
+				Database.updateTableHit(ResultsModel.this.getBasePaytableDBTableName(), 
+						ResultsModel.this.basehittable);
+				Database.updateTableHit(ResultsModel.this.getBonusPaytableDBTableName(), 
+						ResultsModel.this.bonushittable);
+				ResultsModel.this.stop();
+				ResultsModel.this.outputLog.outputStringAndNewLine("Max bonus session: " + maxbonussession);
 			} catch (Exception e) {
 				ResultsModel.this.stop();
 				ResultsModel.this.outputLog
@@ -3409,7 +3457,7 @@ public class ResultsModel {
 		}
 		
 		public double getAvgLossBalance() {
-			return this.avglossbalance;
+			return ResultsModel.roundTwoDecimals(this.avglossbalance);
 		}
 		
 		public void updateLossPercentage() {
@@ -4166,6 +4214,9 @@ public class ResultsModel {
 		}
 
 		private void calculateSoSPayout() {
+			if (ResultsModel.this.bonusactive)
+				r.bonusspin = true;	
+			
 			for (int i = 0; i < this.model.currblock.numlines
 						&& i < this.model.paylines.size(); i++) {
 					
@@ -4175,8 +4226,7 @@ public class ResultsModel {
 				calculateSoSPayoutBase(winsequence, i);
 			}
 			
-			if (ResultsModel.this.bonusactive)
-				r.bonusspin = true;	
+			
 		}
 		
 		private void calculateDTPayout() {			
@@ -4612,9 +4662,11 @@ public class ResultsModel {
 			} 
 			
 			if (sr.activatedBonus) {
-				r.setBonusActivated(true);
 				creditswon += sr.bestFreeStormPayout;
-				r.addFreeSpinsAwarded((short)getSoSAwardedSpins());
+				// Only get a random # of free spins once even there are bonus wins on multi-lines
+				if (!r.bonusactivated)
+					r.addFreeSpinsAwarded((short)getSoSAwardedSpins());
+				r.setBonusActivated(true);
 				
 				if (!bonusmode) {
 					this.model.incrementBaseHit(sr.bonussequence, sr.bestFreeStormPayout);

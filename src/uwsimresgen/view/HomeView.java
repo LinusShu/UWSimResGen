@@ -55,7 +55,7 @@ public class HomeView extends JPanel implements IView  {
 	private JLabel optionsLabel = new JLabel("Options:");
 	private JCheckBox genAllStopsCheckBox = new JCheckBox("Simulate All Reel Stops");
 	private JCheckBox genNoTableCheckBox = new JCheckBox("Do NOT Create Spin Results DB Table");
-	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Simulate Blocks");
+	private JCheckBox genAllBonusSpinsCheckBox = new JCheckBox("Generate All Bonus Spins");
 	private JCheckBox genGamblersRuinCheckBox = new JCheckBox("Simulate Gamblers Ruin Scenario");
 	private JCheckBox genPrizeSizeCheckBox = new JCheckBox("Generate Prize Size DB Table");
 	private JCheckBox genForcedFreeSpinsCheckBox = new JCheckBox("Simulate Forced Free Spins");
