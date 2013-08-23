@@ -604,15 +604,9 @@ public class HomeView extends JPanel implements IView  {
 			this.numlinesLabel.setVisible(false);
 			this.numlinesTF.setVisible(false);
 			
-			//this.msButton.setEnabled(true);
-			//this.dtButton.setEnabled(true);
+			this.msButton.setEnabled(true);
+			this.dtButton.setEnabled(true);
 			this.sosButton.setEnabled(true);
-			
-			// Only for custom build
-			this.sosButton.setSelected(true);
-			this.msButton.setEnabled(false);
-			this.dtButton.setEnabled(false);
-			this.sosButton.setEnabled(false);
 			
 			if (this.model.getMode() == Mode.MONEY_STORM) {
 				this.genAllStopsCheckBox.setEnabled(true);
@@ -628,6 +622,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genForcedFreeSpinsCheckBox.setEnabled(true);
 				
 				this.genBettingStrategyCheckBox.setVisible(false);
+			
 			} else if (this.model.getMode() == Mode.DOLPHIN_TREASURE) {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
@@ -641,6 +636,7 @@ public class HomeView extends JPanel implements IView  {
 				
 				this.prefixTF.setText(this.model.getDTTablePrefix());	
 				this.dbnameTF.setText(this.model.getDBName());
+			
 			} else {
 				this.genAllStopsCheckBox.setEnabled(true);
 				this.genNoTableCheckBox.setEnabled(true);
@@ -653,9 +649,6 @@ public class HomeView extends JPanel implements IView  {
 				
 				this.prefixTF.setText(this.model.getSoSTablePrefix());	
 				this.dbnameTF.setText(this.model.getDBName());
-				
-				// Custom build only
-				this.genGamblersRuinCheckBox.setVisible(false);
 			}
 			
 			
@@ -715,7 +708,7 @@ public class HomeView extends JPanel implements IView  {
 				this.genNoTableCheckBox.setEnabled(true);
 				this.genGamblersRuinCheckBox.setEnabled(false);
 				this.genForcedFreeSpinsCheckBox.setEnabled(false);
-				this.genBettingStrategyCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(true);
 			}
 			
 			else if (this.model.getGenForcedFreeSpins()){
@@ -729,6 +722,16 @@ public class HomeView extends JPanel implements IView  {
 				this.genPrizeSizeCheckBox.setEnabled(false);
 				this.genBettingStrategyCheckBox.setEnabled(false);
 			
+			} else if (this.model.getGenBettingStrategies()){
+				this.blocksFile.setEnabled(true);
+				this.blocksFileLabel.setEnabled(true);
+				this.blocksFileTF.setEnabled(true);
+				
+				this.genAllStopsCheckBox.setEnabled(false);
+				this.genAllBonusSpinsCheckBox.setEnabled(true);
+				this.genGamblersRuinCheckBox.setEnabled(false);
+				this.genPrizeSizeCheckBox.setEnabled(false);
+				this.genBettingStrategyCheckBox.setEnabled(true);
 				
 			} else {
 				this.blocksFile.setEnabled(true);

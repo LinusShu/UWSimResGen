@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -209,7 +210,6 @@ public class ResultsModel {
 		this.simulator = new Simulator(this);
 		this.outputLog = new OutputLog("log");
 		this.random = new Random();
-		this.mode = Mode.SANDS_OF_SPLENDOR;
 	}
 
 	public void AddView(IView view) {
@@ -1177,10 +1177,13 @@ public class ResultsModel {
 				
 					ResultsModel.this.currblock = ResultsModel.this.blocks
 							.get(ResultsModel.this.currblockindex);
-					ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
-					ResultsModel.this.currbie = new BasicInfoEntry(ResultsModel.this.currblock);
-					ResultsModel.this.currbse = new BettingStrategyEntry(ResultsModel.this.currblock);
-					ResultsModel.this.currlpe = new LossPercentageEntry(ResultsModel.this.currblock);
+					
+					if (ResultsModel.this.currblock != null) {
+						ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
+						ResultsModel.this.currbie = new BasicInfoEntry(ResultsModel.this.currblock);
+						ResultsModel.this.currbse = new BettingStrategyEntry(ResultsModel.this.currblock);
+						ResultsModel.this.currlpe = new LossPercentageEntry(ResultsModel.this.currblock);
+					}
 					
 					while (ResultsModel.this.currblock != null
 							&& !ResultsModel.this.cancelled) {
@@ -1889,12 +1892,19 @@ public class ResultsModel {
 	
 	protected void updateLPE(Result r) {
 		// update the balance after each spin
-		if (this.bonusactive)
+		if (this.bonusactive) {
 			currlpe.setBalance(r.creditswon);
-		else
+		} else {
 			currlpe.setBalance(r.creditswon - currlpe.getBet());
-		
-		// update the bonusactivation count 
+			
+			// If bonus activation in base mode
+			if (r.bonusactivated && currlpe.bonuswin == 0) {
+				currlpe.bonuswin += r.creditswon;
+			} else {
+				currlpe.updateSpinWinAmount(r);  // Dolphin Treasure only
+			}
+		}
+		// update the bonus activation count 
 		if (r.bonusactivated && !r.bonusspin)
 			currlpe.incrementBonusActivations();
 		
@@ -1910,12 +1920,17 @@ public class ResultsModel {
 		} else 
 			currlpe.incrementLoss();
 		
+		if (r.bonusspin) {
+			currlpe.addBonusWin(r.creditswon);
+		}
+		
 		// if one repeat is completed
 		if (this.repeatComplete) {
 			currlpe.updateLossPercentage();
 			currlpe.updateLossBalance();
 			currlpe.incrementCurBalanceIndex();
 			currlpe.updateTotalWins();
+			currlpe.calculateSpinWinAmountSD();	// Dolphin Treasure only
 			this.repeatComplete = false;
 		}
 		
@@ -1928,6 +1943,9 @@ public class ResultsModel {
 			currlpe.calculateSD();
 			currlpe.calculateLossPercentageMedian();
 			currlpe.calculateAvgPaybackPercentage();
+			currlpe.calculateSpinWinAmountSD();	// Dolphin Treasure only
+			currlpe.updateMeanSD();  // Dolphin Treasure only
+			currlpe.updateMedianSD(); // Dolphin Treasure only
 
 			
 			try {
@@ -3282,12 +3300,19 @@ public class ResultsModel {
 		
 		private int repeats = 0;
 		private double sd = 0;
+		private double meanwinamountsd = 0;
+		private double medianwinamountsd = 0;
+		private double totalwinamount = 0;
+		private int bonuswin = 0;
 		
-		private ArrayList<Integer> losspercentages = new ArrayList<Integer>();
+		private List<Integer> losspercentages = new ArrayList<Integer>();
 		private List<Integer> bonusActivations = new ArrayList<Integer>();
-		private ArrayList<Double> balances = new ArrayList<Double>();
+		private List<Double> balances = new ArrayList<Double>();
 		private List<Long> totalwins = new ArrayList<Long>();
-		private ArrayList<Range> ranges = new ArrayList<Range>();
+		private List<Range> ranges = new ArrayList<Range>();
+		private List<Double> spinwinamounts = new ArrayList<Double>();
+		private List<Double> spinwinamountsds = new ArrayList<Double>();
+		private List<Double> meanwinamounts = new ArrayList<Double>();
 
 		public LossPercentageEntry(Block currblock) {
 			this.numspins = currblock.getNumSpins();
@@ -3302,8 +3327,9 @@ public class ResultsModel {
 			this.initialbalance = numspins * numline * currblock.getLineBet();
 			
 			// populate the balance array
-			for (int i = 0; i < this.repeats; i++) 
+			for (int i = 0; i < this.repeats; i++) {
 				this.balances.add(initialbalance);
+			}
 		
 			// populate the loss percentage range check array
 			double percent = 1;
@@ -3323,7 +3349,11 @@ public class ResultsModel {
 				this.bonusActivations.add(0);
 			}
 		}
-		
+
+		public void addBonusWin(int value) {
+			this.bonuswin += value;
+		}
+
 		public void calculateAvgPaybackPercentage() {
 			for (long l : this.totalwins)
 				this.avgpbp += l;
@@ -3434,7 +3464,7 @@ public class ResultsModel {
 			return this.losspercentages.get(index);
 		}
 		
-		public ArrayList<Integer> getLossPercentages() {
+		public List<Integer> getLossPercentages() {
 			return this.losspercentages;
 		}
 		
@@ -3500,7 +3530,7 @@ public class ResultsModel {
 			this.curBonusActivations++;
 		}
 
-		public ArrayList<Range> getRangeArray() {
+		public List<Range> getRangeArray() {
 			return this.ranges;
 		}
 
@@ -3510,6 +3540,90 @@ public class ResultsModel {
 		
 		public int getAvgBonusActivation(int index) {
 			return this.bonusActivations.get(index);
+		}
+		
+		public double getMeanWinAmountSD() {
+			return ResultsModel.roundTwoDecimals(this.meanwinamountsd);
+		}
+		
+		public double getMedianWinAmountSD() {
+			return ResultsModel.roundTwoDecimals(this.medianwinamountsd);
+		}
+		
+		/**
+		 * Add the win amount of the spin into the array, called at the end of each spin
+		 * @param r		The spin Result object
+		 */
+		public void updateSpinWinAmount(Result r) {
+			double spinwinamount = 0;
+			
+			// If end of a bonus mode session
+			if (this.bonuswin > 0) {
+				spinwinamount = this.bonuswin;
+				this.bonuswin = 0;
+				// Add the total win amount of the previous bonus activation to the array
+				this.spinwinamounts.add(spinwinamount);
+				this.totalwinamount += spinwinamount;
+			} 
+			
+			// If consecutive bonus activations 
+			if (r.bonusactivated) {
+				this.bonuswin = r.creditswon;
+			// Add the current spin win amount to the array
+			} else {
+				spinwinamount = r.creditswon;
+			
+				this.spinwinamounts.add(spinwinamount);
+				this.totalwinamount += spinwinamount;
+			}
+		}
+		
+		/**
+		 * Calculates the SD of the spin win amounts, called at the end of each repeat.
+		 */
+		public void calculateSpinWinAmountSD() {
+			double meanwinamount = (double)this.totalwinamount / this.spinwinamounts.size();
+			double tmp = 0;
+			
+			for (double d : this.spinwinamounts) 
+				tmp += (d - meanwinamount) * (d - meanwinamount);
+			tmp /= this.spinwinamounts.size();
+			this.spinwinamountsds.add(Math.sqrt(tmp));
+			this.meanwinamounts.add(meanwinamount);
+			
+			// reset variables 
+			this.spinwinamounts = new ArrayList<Double>();
+			this.totalwinamount = 0;
+		}
+		
+		/**
+		 * Calculates the median of all the spin win amounts SDs, called at the end of each block.
+		 */
+		public void updateMedianSD() {
+			Collections.sort(this.spinwinamountsds);
+			
+			int mid_sd = spinwinamountsds.size() / 2;
+			
+			this.medianwinamountsd = (spinwinamountsds.size() % 2 == 1) ? (spinwinamountsds.get(mid_sd))
+						: ((spinwinamountsds.get(mid_sd - 1) + spinwinamountsds.get(mid_sd)) / 2);			
+		}
+		
+		/**
+		 * Calculates the mean of all the spin win amounts SDs, called at the end of each block.
+		 */
+		public void updateMeanSD() {
+			double total = 0;
+			double meanwinamount = 0;
+			
+			for (double d : this.spinwinamountsds)
+				total += d;
+			
+			this.meanwinamountsd = total / this.spinwinamountsds.size();
+			
+			total = 0;
+			for (double d : this.meanwinamounts) 
+				total += d;
+			meanwinamount = total / this.meanwinamounts.size();
 		}
 		
 	}
@@ -5772,6 +5886,13 @@ public class ResultsModel {
 		private int numfreespins = 0;
 		private int bonuswins = 0;
 		
+		private double meansd = 0;
+		private double numstreaks = 0;
+		private double meanstreaklength = 0;
+		private List<Double> streaksds = new ArrayList<Double>();
+		private List<Integer> streaklengths = new ArrayList<Integer>();
+		private List<Integer> streakcounts = new ArrayList<Integer>();
+		
 		private SortedMap<Integer, Integer> winningstreaks_ldwaswins = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
 			public int compare(Integer key1, Integer key2) {
 				return key1 - key2;
@@ -5863,6 +5984,10 @@ public class ResultsModel {
 			else this.losingstreaks_ldwaslosses.put(streak, 1);
 		}
 		
+		public double getMeanStreakSD() {
+			return ResultsModel.roundTwoDecimals(this.meansd);
+		}
+		
 		public void updateSE(Result r) {
 			boolean isLDWasWin = r.creditswon > 0;
 			boolean isLDWasLoss = (r.creditswon - r.linebet * r.numlines) >= 0;
@@ -5889,7 +6014,16 @@ public class ResultsModel {
 			} else {
 				updateStreaks(isLDWasWin, isLDWasLoss);
 			}
-
+			
+			// If a repeate is finished
+			if (ResultsModel.this.repeatComplete) {
+				// remove the following lines if not calculating streak SDs.
+				//TODO add an option in UI to disable this
+				calculateMeanStreakLength();
+				calculateStreakLengthSD();
+				clearMaps();  
+			}
+			
 			// If a block is finished 
 			if (ResultsModel.this.blockComplete) {
 				// Insert that last streak
@@ -5901,12 +6035,16 @@ public class ResultsModel {
 					this.incrementWinningStreaks_LDWasLosses(currstreak_ldwaslosses);
 				else this.incrementLosingStreaks_LDWasLosses(currstreak_ldwaslosses * -1);
 				
+				calculateMeanStreakLength();
+				calculateStreakLengthSD();
+				calculateMeanSD();
 				// Insert into DB
 				try {
 					Database.insertIntoTable(ResultsModel.this.getStreaksTableName(), this);
 				} catch (SQLException e) {
 					ResultsModel.this.outputLog.outputStringAndNewLine("Inserting into Streaks Table encountered problem: "
 							+ e.getMessage());
+					e.printStackTrace();
 				} finally {
 					ResultsModel.this.currse = new StreaksEntry(ResultsModel.this.currblock);
 				}
@@ -5959,6 +6097,61 @@ public class ResultsModel {
 					this.currstreak_ldwaslosses--;
 				}
 			}
+		}
+		
+		/**
+		 * Calculates the mean losing streak length, called at the end of each repeat
+		 */
+		private void calculateMeanStreakLength() {
+			int losses = 0;
+			Iterator<Entry<Integer, Integer>> streaks = this.losingstreaks_ldwaswins.entrySet().iterator();
+			
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+				
+				losses += streak.getKey() * streak.getValue();
+				this.numstreaks += streak.getValue();
+			}
+			
+			this.meanstreaklength = losses / this.numstreaks;
+		}
+		
+		/**
+		 * Calculates the SD of losing streak length, called at the end of each repeat
+		 */
+		private void calculateStreakLengthSD() {
+			double tmp = 0;
+			Iterator<Entry<Integer, Integer>> streaks = this.losingstreaks_ldwaswins.entrySet().iterator();
+			
+			while (streaks.hasNext()) {
+				Entry<Integer, Integer> streak = streaks.next();
+				
+				tmp += (streak.getKey() - this.meanstreaklength) 
+						* (streak.getKey() - this.meanstreaklength)
+						* streak.getValue();
+			}
+			
+			tmp /= this.numstreaks;
+			this.streaksds.add(Math.sqrt(tmp));
+			
+			// reset the calulated numstreaks
+			this.numstreaks = 0;
+		}
+		
+		private void calculateMeanSD() {
+			double tmp = 0;
+			
+			for (double d : this.streaksds)
+				tmp += d;
+			
+			this.meansd = tmp / this.streaksds.size();
+		}
+		
+		private void clearMaps() {
+			this.losingstreaks_ldwaslosses.clear();
+			this.losingstreaks_ldwaswins.clear();
+			this.winningstreaks_ldwaslosses.clear();
+			this.winningstreaks_ldwaswins.clear();
 		}
 	}
 	
@@ -6147,6 +6340,7 @@ public class ResultsModel {
 			
 		}
 		
+		//TODO Change expected winning streak length to 1 
 		private void updateStreaks(boolean isWin, boolean isBonusActivated) {
 			// If the spins is a win
 			if (isWin) {
@@ -6154,12 +6348,12 @@ public class ResultsModel {
 				if (this.currstreak < 0) {
 					this.currstreak = 1;
 					if (!isBonusActivated) 
-						this.strategies.set(0, this.MAX_BET);
+						this.strategies.set(0, this.MIN_MAX_BET);
 				// If the first spin is a win
 				} else if (this.currstreak == 0) {
 					this.currstreak ++;
 					if (!isBonusActivated) 
-						this.strategies.set(0, this.MAX_BET);
+						this.strategies.set(0, this.MIN_MAX_BET);
 				// If the current streak is a winning streak of length 1, switch back to 
 				// min-max bet on the next spin
 				} else if (this.currstreak >= 1) {

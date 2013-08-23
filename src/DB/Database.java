@@ -32,7 +32,7 @@ import uwsimresgen.model.ResultsModel.WinType;
 
 public class Database {
 
-	public static String DEFAULT_DB_NAME = "SandsofSplendorDB";
+	public static String DEFAULT_DB_NAME = "MoneyStormDB";
 	public static String DP_DB_NAME = "DolphinTreasureDB";
 	public static String SOS_DB_NAME = "SandsofSplendorDB";
 	
@@ -500,7 +500,9 @@ public class Database {
 					+ "AVG_PAYBACK double NOT NULL, "
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
-					+ "LDWS integer NOT NULL"
+					+ "LDWS integer NOT NULL, "
+					+ "MEAN_WINAMOUNTSD double NOT NULL, "
+					+ "MEDIAN_WINAMOUNTSD double NOT NULL"
 					+ ranges + bas + ")";
 			Database.createTable(tableName, query);
 		}
@@ -509,9 +511,9 @@ public class Database {
 		String query = "insert into " + tableName
 				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, " 
 				+ "AVG_LOSSBALANCE, MEDIAN_LOSSBALANCE, SD_LOSSBALANCE, AVG_PAYBACK, " 
-				+ "WINCOUNTS, LOSSCOUNTS, LDWS" 
+				+ "WINCOUNTS, LOSSCOUNTS, LDWS, MEAN_WINAMOUNTSD, MEDIAN_WINAMOUNTSD" 
 				+ rangesI + basI + ") "
-				+ "values(?,?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
 		
 		try {
 			if (lps == null)
@@ -529,8 +531,10 @@ public class Database {
 			lps.setInt(9, lpe.getWin());
 			lps.setInt(10, lpe.getLoss());
 			lps.setInt(11, lpe.getLdw());
+			lps.setDouble(12, lpe.getMeanWinAmountSD());
+			lps.setDouble(13, lpe.getMedianWinAmountSD());
 			
-			int index = 12;
+			int index = 14;
 			
 			for (int i = 0; i < lpe.getLossPercentages().size(); i++) {
 				lps.setInt(index, lpe.getLossPercentage(i));
@@ -926,6 +930,7 @@ public class Database {
 					+ "NUMLINES integer NOT NULL, "
 					+ "NUMSPINS integer NOT NULL, "
 					+ "NUMFREESPINS integer NOT NULL, "
+					+ "STREAKLENGTH_SD double NOT NULL, "
 					+ "STREAKLENGTH integer NOT NULL, " 
 					+ "NUMSTREAKS integer NOT NULL) ";
 			Database.createTable(LWName, query);
@@ -1006,8 +1011,8 @@ public class Database {
 		
 		// Insert losing streaks (LDW as wins) table
 		insert = "insert into " + LWName
-				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH, NUMSTREAKS) "
-				+ "values(?,?,?,?,?,?)";
+				+ "(BLOCKID, NUMLINES, NUMSPINS, NUMFREESPINS, STREAKLENGTH_SD, STREAKLENGTH, NUMSTREAKS) "
+				+ "values(?,?,?,?,?,?,?)";
 		
 		try {
 			if (st == null)
@@ -1021,8 +1026,9 @@ public class Database {
 				st.setInt(2, se.getNumLines());
 				st.setInt(3, se.getNumSpins());
 				st.setInt(4, se.getNumFreeSpins());
-				st.setInt(5, (int)(streak.getKey()));
-				st.setInt(6, (int)(streak.getValue()));
+				st.setDouble(5, se.getMeanStreakSD());
+				st.setInt(6, (int)(streak.getKey()));
+				st.setInt(7, (int)(streak.getValue()));
 				
 				st.addBatch();
 				batchRequests ++;

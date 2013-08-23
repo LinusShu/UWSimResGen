@@ -7,26 +7,30 @@
 			denomination - integer > 0 ( note: you are specifying the number of cents as an integer value, ie: 1 represents 1 cent )
 			numspins - integer > 0
 			blockrepeats - integer > 0
-		-->	
-   		 
-		<block numlines="1" linebet="1" denomination="90" numspins="600" blockrepeats="10000" /> 
+		-->
+   		
+   	    
+		<block numlines="1" linebet="9" denomination="10" numspins="600" blockrepeats="10000" /> 
 		<block numlines="9" linebet="1" denomination="10" numspins="600" blockrepeats="10000" />
-	  	
-		<block numlines="1" linebet="1" denomination="90" numspins="1200" blockrepeats="10000" />
+	  	<!--
+		<block numlines="1" linebet="9" denomination="10" numspins="1200" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="1200" blockrepeats="10000" />
-		
-		<block numlines="1" linebet="1" denomination="90" numspins="2400" blockrepeats="10000" />
+	
+		<block numlines="1" linebet="9" denomination="10" numspins="2400" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="2400" blockrepeats="10000" />
 		
-		<block numlines="1" linebet="1" denomination="90" numspins="6000" blockrepeats="10000" />
+		<block numlines="1" linebet="9" denomination="10" numspins="6000" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="6000" blockrepeats="10000" />
 		
-		<block numlines="1" linebet="1" denomination="90" numspins="15000" blockrepeats="10000" />
+		
+		<block numlines="1" linebet="9" denomination="10" numspins="15000" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="15000" blockrepeats="10000" />
  		
-		<block numlines="1" linebet="1" denomination="90" numspins="30000" blockrepeats="10000" />
+		<block numlines="1" linebet="9" denomination="10" numspins="30000" blockrepeats="10000" />
 		<block numlines="9" linebet="1" denomination="10" numspins="30000" blockrepeats="10000" />
-		
+		-->
+
+		<!--  for simulating betting strategies -->
 		<!--  
 		<block numlines="9" linebet="1" denomination="10" numspins="1000000" blockrepeats="1" />
 		-->
