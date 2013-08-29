@@ -501,8 +501,9 @@ public class Database {
 					+ "WINCOUNTS integer NOT NULL, "
 					+ "LOSSCOUNTS integer NOT NULL, "
 					+ "LDWS integer NOT NULL, "
-					+ "MEAN_WINAMOUNTSD double NOT NULL, "
-					+ "MEDIAN_WINAMOUNTSD double NOT NULL"
+					+ "OUTOFBANDSMEAN double NOT NULL, "
+					+ "PBOVERFLOWMEAN double NOT NULL, "
+					+ "PBUNDERFLOWMEAN double NOT NULL"
 					+ ranges + bas + ")";
 			Database.createTable(tableName, query);
 		}
@@ -511,9 +512,9 @@ public class Database {
 		String query = "insert into " + tableName
 				+ "(BLOCKID, NUMOFSPINS, NUMOFLINES, NUMOFFREESPIN, " 
 				+ "AVG_LOSSBALANCE, MEDIAN_LOSSBALANCE, SD_LOSSBALANCE, AVG_PAYBACK, " 
-				+ "WINCOUNTS, LOSSCOUNTS, LDWS, MEAN_WINAMOUNTSD, MEDIAN_WINAMOUNTSD" 
+				+ "WINCOUNTS, LOSSCOUNTS, LDWS, OUTOFBANDSMEAN, PBOVERFLOWMEAN, PBUNDERFLOWMEAN" 
 				+ rangesI + basI + ") "
-				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?" + rangesQ + basQ + ")";
 		
 		try {
 			if (lps == null)
@@ -531,10 +532,11 @@ public class Database {
 			lps.setInt(9, lpe.getWin());
 			lps.setInt(10, lpe.getLoss());
 			lps.setInt(11, lpe.getLdw());
-			lps.setDouble(12, lpe.getMeanWinAmountSD());
-			lps.setDouble(13, lpe.getMedianWinAmountSD());
+			lps.setDouble(12, lpe.getOutofBandsMean());
+			lps.setDouble(13, lpe.getPBOverflowMean());
+			lps.setDouble(14, lpe.getPBUnderflowMean());
 			
-			int index = 14;
+			int index = 15;
 			
 			for (int i = 0; i < lpe.getLossPercentages().size(); i++) {
 				lps.setInt(index, lpe.getLossPercentage(i));

@@ -1170,7 +1170,6 @@ public class ResultsModel {
 
 			try {
 				//Producer Main Flow here
-				//TODO Dolphin Treasure main flow here
 				if (ResultsModel.this.genGamblersRuin) {
 					doGamblersRuinMode();
 				} else {
@@ -1894,15 +1893,17 @@ public class ResultsModel {
 		// update the balance after each spin
 		if (this.bonusactive) {
 			currlpe.setBalance(r.creditswon);
+			currlpe.bonuswin += r.creditswon;
 		} else {
 			currlpe.setBalance(r.creditswon - currlpe.getBet());
+			currlpe.incrementTotalBet();
 			
-			// If bonus activation in base mode
-			if (r.bonusactivated && currlpe.bonuswin == 0) {
-				currlpe.bonuswin += r.creditswon;
-			} else {
-				currlpe.updateSpinWinAmount(r);  // Dolphin Treasure only
-			}
+			// only update expected balance on non-bonus-activation spins
+			if (!r.bonusactivated)
+				currlpe.updateExpectedBalance();
+
+			currlpe.updateOutofBandCount(r);  // Dolphin Treasure only
+			
 		}
 		// update the bonus activation count 
 		if (r.bonusactivated && !r.bonusspin)
@@ -1920,17 +1921,13 @@ public class ResultsModel {
 		} else 
 			currlpe.incrementLoss();
 		
-		if (r.bonusspin) {
-			currlpe.addBonusWin(r.creditswon);
-		}
-		
 		// if one repeat is completed
 		if (this.repeatComplete) {
 			currlpe.updateLossPercentage();
 			currlpe.updateLossBalance();
 			currlpe.incrementCurBalanceIndex();
 			currlpe.updateTotalWins();
-			currlpe.calculateSpinWinAmountSD();	// Dolphin Treasure only
+			currlpe.updateFlows();	// Dolphin Treasure only
 			this.repeatComplete = false;
 		}
 		
@@ -1943,11 +1940,9 @@ public class ResultsModel {
 			currlpe.calculateSD();
 			currlpe.calculateLossPercentageMedian();
 			currlpe.calculateAvgPaybackPercentage();
-			currlpe.calculateSpinWinAmountSD();	// Dolphin Treasure only
-			currlpe.updateMeanSD();  // Dolphin Treasure only
-			currlpe.updateMedianSD(); // Dolphin Treasure only
+			currlpe.updateFlows();	// Dolphin Treasure only
+			currlpe.calculateOutofBandsMean();  // Dolphin Treasure only
 
-			
 			try {
 				Database.flushBatch();
 				Database.insertIntoTable(this.getLossPercentageDBTableName(), currlpe, this.blocks.size());
@@ -3280,6 +3275,10 @@ public class ResultsModel {
 	}
 
 	public class LossPercentageEntry {
+		private final float DP_HOLD = 0.1213f;
+		private final float DP_BAND = 0.5f;
+		private final double pbupperband;
+		private final double pblowerband;
 		private int numspins = 0;
 		private short numline = 0;
 		private int numfreespins = 0;
@@ -3291,6 +3290,7 @@ public class ResultsModel {
 		private int win = 0;
 		private int lpmedian = 0;
 		private long totalwin = 0;
+		private long totalbet = 0;
 		private double avgpbp = 0;
 		
 		private double initialbalance = 0;
@@ -3300,19 +3300,28 @@ public class ResultsModel {
 		
 		private int repeats = 0;
 		private double sd = 0;
-		private double meanwinamountsd = 0;
-		private double medianwinamountsd = 0;
-		private double totalwinamount = 0;
 		private int bonuswin = 0;
+		private int overflow = 0;
+		private int underflow = 0;
+		private int pboverflow = 0;
+		private int pbunderflow = 0;
+		private double expectedbalance = 0;
+		private double upperband = 0;
+		private double lowerband = 0;
+
+		private double outofbandsMean = 0;
+		private double pboverflowMean = 0;
+		private double pbunderflowMean = 0;
 		
 		private List<Integer> losspercentages = new ArrayList<Integer>();
 		private List<Integer> bonusActivations = new ArrayList<Integer>();
 		private List<Double> balances = new ArrayList<Double>();
 		private List<Long> totalwins = new ArrayList<Long>();
 		private List<Range> ranges = new ArrayList<Range>();
-		private List<Double> spinwinamounts = new ArrayList<Double>();
-		private List<Double> spinwinamountsds = new ArrayList<Double>();
-		private List<Double> meanwinamounts = new ArrayList<Double>();
+		private List<Integer> overflows = new ArrayList<Integer>();
+		private List<Integer> underflows = new ArrayList<Integer>(); 
+		private List<Integer> pboverflows = new ArrayList<Integer>();
+		private List<Integer> pbunderflows = new ArrayList<Integer>();
 
 		public LossPercentageEntry(Block currblock) {
 			this.numspins = currblock.getNumSpins();
@@ -3325,6 +3334,9 @@ public class ResultsModel {
 			this.curBalanceIndex = 0;
 			
 			this.initialbalance = numspins * numline * currblock.getLineBet();
+			this.expectedbalance = this.initialbalance;
+			this.pbupperband = (1 - this.DP_HOLD) * (1 + this.DP_BAND);
+			this.pblowerband = (1 - this.DP_HOLD) * (1 - this.DP_BAND);
 			
 			// populate the balance array
 			for (int i = 0; i < this.repeats; i++) {
@@ -3438,6 +3450,10 @@ public class ResultsModel {
 			this.totalwin += value;
 		}
 		
+		public void incrementTotalBet() {
+			this.totalbet += this.bet;
+		}
+		
 		private void calculateSD() {
 			double sdbalance = 0;
 			
@@ -3542,88 +3558,121 @@ public class ResultsModel {
 			return this.bonusActivations.get(index);
 		}
 		
-		public double getMeanWinAmountSD() {
-			return ResultsModel.roundTwoDecimals(this.meanwinamountsd);
+		public double getOutofBandsMean() {
+			return ResultsModel.roundFourDecimals(this.outofbandsMean);
 		}
 		
-		public double getMedianWinAmountSD() {
-			return ResultsModel.roundTwoDecimals(this.medianwinamountsd);
+		public double getPBOverflowMean() {
+			return ResultsModel.roundFourDecimals(this.pboverflowMean);
+		}
+		
+		public double getPBUnderflowMean() {
+			return ResultsModel.roundFourDecimals(this.pbunderflowMean);
 		}
 		
 		/**
-		 * Add the win amount of the spin into the array, called at the end of each spin
+		 *  Sets the expected balance and upper, lower band at the end of each spin (except bonus spins)
+		 */
+		public void updateExpectedBalance() {
+			this.expectedbalance -= DP_HOLD * this.bet;
+			this.upperband = this.expectedbalance * (1 + DP_BAND);
+			this.lowerband = this.expectedbalance * (1 - DP_BAND);
+		}
+		
+		/**
+		 * Finds out if the spin balance exceeds the upper or lower bands of the expected balance / payback %; 
+		 * called at the end of each spin
 		 * @param r		The spin Result object
 		 */
-		public void updateSpinWinAmount(Result r) {
-			double spinwinamount = 0;
+		public void updateOutofBandCount(Result r) {
+			double currbalance = this.balances.get(this.curBalanceIndex);
+			double currpayback = (double)this.totalwin / this.totalbet;
 			
-			// If end of a bonus mode session
-			if (this.bonuswin > 0) {
-				spinwinamount = this.bonuswin;
-				this.bonuswin = 0;
-				// Add the total win amount of the previous bonus activation to the array
-				this.spinwinamounts.add(spinwinamount);
-				this.totalwinamount += spinwinamount;
-			} 
-			
-			// If consecutive bonus activations 
+			// If bonus mode is activated
 			if (r.bonusactivated) {
-				this.bonuswin = r.creditswon;
-			// Add the current spin win amount to the array
+				// If consecutive bonus activation
+				if (this.bonuswin > 0) {
+					updateExpectedBalance();
+					updateBandCounts(currbalance - r.creditswon);
+					bonuswin = r.creditswon;
+					
+					currpayback = (double)(this.totalwin - r.creditswon) / (this.totalbet - this.bet);
+					updatePBBandCounts(currpayback);
+				// If bonus is activated as usual in base mode
+				} else {
+					bonuswin += r.creditswon;
+				}
+			
+			// If just came out of bonus mode
+			} else if (bonuswin > 0) {
+				updateBandCounts(currbalance - r.creditswon);
+				updateExpectedBalance();
+				updateBandCounts(currbalance + r.creditswon);
+				
+				currpayback = (double)(this.totalwin - r.creditswon) / (this.totalbet - this.bet);
+				updatePBBandCounts(currpayback);
+				currpayback = (double)this.totalwin/ this.totalbet;
+				updatePBBandCounts(currpayback);
+			// On a regular spin	
 			} else {
-				spinwinamount = r.creditswon;
-			
-				this.spinwinamounts.add(spinwinamount);
-				this.totalwinamount += spinwinamount;
-			}
+				updateBandCounts(currbalance);
+				updatePBBandCounts(currpayback);
+			} 
+		}
+		
+		private void updateBandCounts(double balance) {
+			if (balance > this.upperband)
+				this.overflow ++;
+			else if (balance < this.lowerband)
+				this.underflow ++;
+		}
+		
+		private void updatePBBandCounts(double currpayback) {
+			if (currpayback > this.pbupperband)
+				this.pboverflow ++;
+			else if (currpayback < this.pblowerband)
+				this.pbunderflow ++;
 		}
 		
 		/**
-		 * Calculates the SD of the spin win amounts, called at the end of each repeat.
+		 * Updates the # of overflows and underflows in each repeat.
 		 */
-		public void calculateSpinWinAmountSD() {
-			double meanwinamount = (double)this.totalwinamount / this.spinwinamounts.size();
+		public void updateFlows() {
+			this.overflows.add(this.overflow);
+			this.underflows.add(this.underflow);
+			this.pboverflows.add(this.pboverflow);
+			this.pbunderflows.add(this.pbunderflow);
+			
+			// reset variables
+			this.overflow = 0;
+			this.underflow = 0;
+			this.expectedbalance = this.initialbalance;
+			this.upperband = 0;
+			this.lowerband = 0;
+			this.pbunderflow = 0;
+			this.pboverflow = 0;
+			this.totalbet = 0;
+		}
+		
+		
+		/**
+		 * Calculates the mean of percentage of spins that overflows and underflows from all the repeats; 
+		 * called at the end of each block.
+		 */
+		public void calculateOutofBandsMean() {
 			double tmp = 0;
+			double tmp2 = 0;
+			double tmp3 = 0;
 			
-			for (double d : this.spinwinamounts) 
-				tmp += (d - meanwinamount) * (d - meanwinamount);
-			tmp /= this.spinwinamounts.size();
-			this.spinwinamountsds.add(Math.sqrt(tmp));
-			this.meanwinamounts.add(meanwinamount);
+			for (int i = 0; i < this.overflows.size(); i++) {
+				tmp += overflows.get(i) + underflows.get(i);
+				tmp2 += this.pboverflows.get(i);
+				tmp3 += this.pbunderflows.get(i);
+			}
 			
-			// reset variables 
-			this.spinwinamounts = new ArrayList<Double>();
-			this.totalwinamount = 0;
-		}
-		
-		/**
-		 * Calculates the median of all the spin win amounts SDs, called at the end of each block.
-		 */
-		public void updateMedianSD() {
-			Collections.sort(this.spinwinamountsds);
-			
-			int mid_sd = spinwinamountsds.size() / 2;
-			
-			this.medianwinamountsd = (spinwinamountsds.size() % 2 == 1) ? (spinwinamountsds.get(mid_sd))
-						: ((spinwinamountsds.get(mid_sd - 1) + spinwinamountsds.get(mid_sd)) / 2);			
-		}
-		
-		/**
-		 * Calculates the mean of all the spin win amounts SDs, called at the end of each block.
-		 */
-		public void updateMeanSD() {
-			double total = 0;
-			double meanwinamount = 0;
-			
-			for (double d : this.spinwinamountsds)
-				total += d;
-			
-			this.meanwinamountsd = total / this.spinwinamountsds.size();
-			
-			total = 0;
-			for (double d : this.meanwinamounts) 
-				total += d;
-			meanwinamount = total / this.meanwinamounts.size();
+			this.outofbandsMean = tmp / this.overflows.size() / this.numspins;
+			this.pboverflowMean = tmp2 / this.pboverflows.size() / this.numspins;
+			this.pbunderflowMean = tmp3 / this.pbunderflows.size() / this.numspins;
 		}
 		
 	}
@@ -5890,8 +5939,6 @@ public class ResultsModel {
 		private double numstreaks = 0;
 		private double meanstreaklength = 0;
 		private List<Double> streaksds = new ArrayList<Double>();
-		private List<Integer> streaklengths = new ArrayList<Integer>();
-		private List<Integer> streakcounts = new ArrayList<Integer>();
 		
 		private SortedMap<Integer, Integer> winningstreaks_ldwaswins = new TreeMap<Integer, Integer>(new Comparator<Integer>() {
 			public int compare(Integer key1, Integer key2) {
